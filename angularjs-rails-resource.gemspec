@@ -4,9 +4,9 @@ require File.expand_path('../lib/angularjs-rails-resource/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Tommy Odom"]
   gem.email         = ["odom@finelineprototyping.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
-  gem.homepage      = ""
+  gem.description   = %q{A small AngularJS add-on for integrating with Rails via JSON more easily.}
+  gem.summary       = %q{}
+  gem.homepage      = "https://github.com/tpodom/angularjs-rails-resource"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
