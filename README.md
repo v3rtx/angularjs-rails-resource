@@ -34,8 +34,7 @@ Creating a resource using this factory is similar to using $resource, you just c
 #### Config Options
 The following options are available for the config object passed to the factory function.
 
- * **url** - This is the base url of the service.  This is very limited in functionality and expects that the base url is used
-        for query and instances are accessed via: base url + '/' + id
+ * **url** - This is the base url of the service.  See Resource URL below for more information.
  * **name** - This is the name used for root wrapping when dealing with singular instances
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
@@ -43,6 +42,10 @@ The following options are available for the config object passed to the factory 
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **requestTransformers** *(optional) - See Transformers / Interceptors
  * **responseInterceptors** *(optional)* - See Transformers / Interceptors
+
+#### Resource URL
+The resource url functionality is pretty basic right now.  The base url is used for query and create and the resource url
+is assumed to be the base url followed by the id.  Therefore, a base url of '/books' will result in a resource url of '/books/123'.
 
 #### Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
