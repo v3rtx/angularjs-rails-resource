@@ -3,9 +3,10 @@
 A resource factory inspired by $resource from AngularJS and [Misko's recommendation](http://stackoverflow.com/questions/11850025/recommended-way-of-getting-data-from-the-server).
 
 When starting out with AngularJS and Rails we initially were using $resource but there were three things we didn't like that this gem sets out to provide:
-1.  $resource didn't return promises
-2.  Rails prefers JSON be root wrapped
-3.  Our JSON contained snake case keys coming from our database but we didn't want to mix snake case and camel case in our UI
+
+ 1.  $resource didn't return promises
+ 2.  Rails prefers JSON be root wrapped
+ 3.  Our JSON contained snake case keys coming from our database but we didn't want to mix snake case and camel case in our UI
 
 
 ## Installation
@@ -33,15 +34,15 @@ Creating a resource using this factory is similar to using $resource, you just c
 #### Config Options
 The following options are available for the config object passed to the factory function.
 
- * url - This is the base url of the service.  This is very limited in functionality and expects that the base url is used
+ * **url** - This is the base url of the service.  This is very limited in functionality and expects that the base url is used
         for query and instances are accessed via: base url + '/' + id
- * name - This is the name used for root wrapping when dealing with singular instances
- * pluralName (optional) - If specified this name will be used for unwrapping query results,
+ * **name** - This is the name used for root wrapping when dealing with singular instances
+ * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
- * httpConfig (optional) - Passed directly to $http.
- * defaultParams (optional) - If the resource expects a default set of query params on every call you can specify them here.
- * requestTransformers (optional) - See Transformers / Interceptors
- * responseInterceptors (optional) - See Transformers / Interceptors
+ * **httpConfig** *(optional)* - Passed directly to $http.
+ * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
+ * **requestTransformers** *(optional) - See Transformers / Interceptors
+ * **responseInterceptors** *(optional)* - See Transformers / Interceptors
 
 #### Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
@@ -86,25 +87,25 @@ Resources created using this factory have the following methods available:
 The constructor function is to create new instances of the resource.
 
 ##### Parameters
- * data (optional) - An object containing the data to be stored in the instance.
+ * **data** *(optional)* - An object containing the data to be stored in the instance.
 
 ##### query
 A "class" method that executes a GET request against the base url with query parameters set via the params option.
 
 ##### Parameters
- * params - An map of strings or objects that are passed to $http to be turned into query parameters
+ * **params** - An map of strings or objects that are passed to $http to be turned into query parameters
 
 ##### Returns
- * promise - See Promises above
+ * *promise* - See Promises above
 
 ##### get
 A "class" method that executes a GET request against the resource url.
 
 ##### Parameters
- * id - The id of the resource to retrieve
+ * **id** - The id of the resource to retrieve
 
 ##### Returns
- * promise - See Promises above
+ * *promise* - See Promises above
 
 ##### create
 An "instance" method that executes a POST to the base url with the data defined in the instance.
@@ -113,7 +114,7 @@ An "instance" method that executes a POST to the base url with the data defined 
 None
 
 ##### Returns
- * promise - See Promises above
+ * *promise* - See Promises above
 
 ##### update
 An "instance" method that executes a PUT to the resource url with the data defined in the instance.
@@ -122,7 +123,7 @@ An "instance" method that executes a PUT to the resource url with the data defin
 None
 
 ##### Returns
- * promise - See Promises above
+ * *promise* - See Promises above
 
 ##### remove / delete
 Both of these are "instance" methods that execute a DELETE to the resource url.
@@ -131,7 +132,7 @@ Both of these are "instance" methods that execute a DELETE to the resource url.
 None
 
 ##### Returns
- * promise - See Promises above
+ * *promise* - See Promises above
 
 ### Example
 Creating a Book resource would look something like:
