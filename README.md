@@ -21,6 +21,8 @@ Include the javascript somewhere in your asset pipeline:
 
 
 ## Dependencies
+Since this is an [AngularJS](http://angularjs.org) module it of course depends on that but more specifically the it depends on the following AngularJS services:
+
 * [$http](http://docs.angularjs.org/api/ng.$http)
 * [$q](http://docs.angularjs.org/api/ng.$q)
 * [$injector](http://docs.angularjs.org/api/AUTO.$injector)
