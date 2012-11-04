@@ -19,35 +19,34 @@ Include the javascript somewhere in your asset pipeline:
 
     //= require angularjs/rails/resource
 
-## Usage
 
-### Dependencies
+## Dependencies
 * [$http](http://docs.angularjs.org/api/ng.$http)
 * [$q](http://docs.angularjs.org/api/ng.$q)
 * [$injector](http://docs.angularjs.org/api/AUTO.$injector)
 
-### API
+## Resource Creation
 Creating a resource using this factory is similar to using $resource, you just call the factory with the config options and get back your resource.
 
     var resource = railsResourceFactory(config);
 
-#### Config Options
+### Config Options
 The following options are available for the config object passed to the factory function.
 
- * **url** - This is the base url of the service.  See Resource URL below for more information.
+ * **url** - This is the base url of the service.  See [Resource URLs](#resource-urls) below for more information.
  * **name** - This is the name used for root wrapping when dealing with singular instances
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
  * **httpConfig** *(optional)* - Passed directly to $http.
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
- * **requestTransformers** *(optional) - See Transformers / Interceptors
- * **responseInterceptors** *(optional)* - See Transformers / Interceptors
+ * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
+ * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
 
-#### Resource URL
+## Resource URLs
 The resource url functionality is pretty basic right now.  The base url is used for query and create and the resource url
 is assumed to be the base url followed by the id.  Therefore, a base url of '/books' will result in a resource url of '/books/123'.
 
-#### Transformers / Interceptors
+## Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
 that can be resolved using Angular's DI.
 
@@ -57,7 +56,7 @@ the default transformers and interceptors you will have to include those in the 
 That also means that if you don't want root wrapping and key conversions then you can just pass an emptry array for each
 and no processing will be done on the data.
 
-##### Transformers
+### Transformers
 Transformer functions are called to transform the data before we send it to $http for POST/PUT.
 
 The transformer functions will be called with the following signature
@@ -66,16 +65,16 @@ The transformer functions will be called with the following signature
 
 The return value of the function must be the transformed data.
 
-##### Interceptors
+### Interceptors
 Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
 
 The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.
 
 The promise passed to each interceptor contains a reference to the resource to expose the configured options of the resource.
 
-Each interceptor promise is expected to return the response or a $q.reject.  See Promises below for more information about the promise data.
+Each interceptor promise is expected to return the response or a $q.reject.  See [Promises](#promises) below for more information about the promise data.
 
-#### Promises
+## Promises
 [$http documentation](http://docs.angularjs.org/api/ng.$http) describes the promise data very well so I highly recommend reading that.
 
 In addition to the fields listed in the $http documentation an additional field named originalData is added to the response
@@ -83,54 +82,66 @@ object to keep track of what the field was originally pointing to.  The original
 that if response.data is reassigned that there's still a pointer to the original response.data object.
 
 
-#### Methods
-Resources created using this factory have the following methods available:
+## Methods
+Resources created using this factory have the following methods available and each one (except the constructor) returns a [Promise](#promises).
 
-#### constructor
+### constructor
+***
+
 The constructor function is to create new instances of the resource.
 
-** Parameters: **
-
+####Parameters
  * **data** *(optional)* - An object containing the data to be stored in the instance.
 
-##### - query
+### query
+***
+
 A "class" method that executes a GET request against the base url with query parameters set via the params option.
 
-** Parameters: **
-
+####Parameters
  * **params** - An map of strings or objects that are passed to $http to be turned into query parameters
 
 
-##### - get
+### get
+***
+
 A "class" method that executes a GET request against the resource url.
 
-** Parameters: **
-
+####Parameters
  * **id** - The id of the resource to retrieve
 
 
-##### - create
+### create
+***
+
 An "instance" method that executes a POST to the base url with the data defined in the instance.
 
-** Parameters: **
+####Parameters
+
 None
 
 
-##### - update
+### update
+***
+
 An "instance" method that executes a PUT to the resource url with the data defined in the instance.
 
-** Parameters: **
+####Parameters
+
 None
 
 
-##### - remove / delete
+### remove / delete
+***
+
 Both of these are "instance" methods that execute a DELETE to the resource url.
 
-** Parameters: **
+####Parameters
+
 None
 
 
-### Example
+## Example
 Creating a Book resource would look something like:
 
     angular.module('book.services', ['rails']);
