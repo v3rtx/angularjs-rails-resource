@@ -167,6 +167,28 @@ Creating a Book resource would look something like:
         book.update();
     });
 
+## Extending
+You can add additional "class" or "instance" methods by modifying the resource returned from the factory call.  For instance,
+if you wanted to add a "class" method named "findByTitle" to the Book resource you would modify the service setup as follows:
+
+    angular.module('book.services', ['rails']);
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        var resource = railsResourceFactory({url: '/books', name: 'book'});
+        resource.findByTitle = function (title) {
+            return resource.query({title: title});
+        };
+    }]);
+
+If you wanted to add an "instance" method (I couldn't come up with an example for this) you would add a new function to the resource prototype object:
+
+    angular.module('book.services', ['rails']);
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        var resource = railsResourceFactory({url: '/books', name: 'book'});
+        resource.prototype.doSomething = function () {
+            // do something here
+        };
+    }]);
+
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Testacular](http://vojtajina.github.com/testacular/).
 
