@@ -89,53 +89,46 @@ Resources created using this factory have the following methods available:
 #### constructor
 The constructor function is to create new instances of the resource.
 
-##### Parameters
+** Parameters: **
+
  * **data** *(optional)* - An object containing the data to be stored in the instance.
 
-##### query
+##### - query
 A "class" method that executes a GET request against the base url with query parameters set via the params option.
 
-##### Parameters
+** Parameters: **
+
  * **params** - An map of strings or objects that are passed to $http to be turned into query parameters
 
-##### Returns
- * *promise* - See Promises above
 
-##### get
+##### - get
 A "class" method that executes a GET request against the resource url.
 
-##### Parameters
+** Parameters: **
+
  * **id** - The id of the resource to retrieve
 
-##### Returns
- * *promise* - See Promises above
 
-##### create
+##### - create
 An "instance" method that executes a POST to the base url with the data defined in the instance.
 
-##### Parameters
+** Parameters: **
 None
 
-##### Returns
- * *promise* - See Promises above
 
-##### update
+##### - update
 An "instance" method that executes a PUT to the resource url with the data defined in the instance.
 
-##### Parameters
+** Parameters: **
 None
 
-##### Returns
- * *promise* - See Promises above
 
-##### remove / delete
+##### - remove / delete
 Both of these are "instance" methods that execute a DELETE to the resource url.
 
-##### Parameters
+** Parameters: **
 None
 
-##### Returns
- * *promise* - See Promises above
 
 ### Example
 Creating a Book resource would look something like:
