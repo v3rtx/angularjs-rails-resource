@@ -34,13 +34,16 @@ Creating a resource using this factory is similar to using $resource, you just c
 The following options are available for the config object passed to the factory function.
 
  * **url** - This is the base url of the service.  See [Resource URLs](#resource-urls) below for more information.
- * **name** - This is the name used for root wrapping when dealing with singular instances
+ * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
  * **httpConfig** *(optional)* - Passed directly to $http.
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
+
+**NOTE:** The names should be specified using camel case when using the key transformations because that happens before the root wrapping by default.
+For example, you should specify "publishingCompany" and "publishingCompanies" instead of "publishing_company" and "publishing_companies".
 
 ## Resource URLs
 The resource url functionality is pretty basic right now.  The base url is used for query and create and the resource url
