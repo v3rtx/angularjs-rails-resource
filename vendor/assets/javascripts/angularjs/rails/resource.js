@@ -119,15 +119,15 @@
                 );
             });
 
-            function transformData(data) {
+            RailsResource.transformData = function (data) {
                 angular.forEach(RailsResource.requestTransformers, function (transformer) {
                     data = transformer(data, RailsResource);
                 });
 
                 return data;
-            }
+            };
 
-            function callInterceptors(promise) {
+            RailsResource.callInterceptors = function (promise) {
 
                 angular.forEach(RailsResource.responseInterceptors, function (interceptor) {
                     promise.resource = RailsResource;
@@ -135,48 +135,10 @@
                 });
 
                 return promise;
-            }
-
-            function processResponse(promise) {
-                promise = promise.then(function (response) {
-                    // store off the data in case something (like our root unwrapping) assigns data as a new object
-                    response.originalData = response.data;
-                    return response;
-                });
-
-                promise = callInterceptors(promise);
-
-                return promise.then(angular.bind(this, function (response) {
-                    // we may not have response data
-                    if (response.hasOwnProperty('data') && angular.isObject(response.data)) {
-                        angular.extend(this, response.data);
-                    }
-
-                    return this;
-                }));
-            }
-
-            function httpConfig(queryParams) {
-                var config = angular.copy(RailsResource.httpConfig, {});
-
-                if (RailsResource.defaultParams) {
-                    config.params = RailsResource.defaultParams;
-                }
-
-                if (queryParams) {
-                    config.params = angular.extend(config.params || {}, queryParams);
-                }
-
-                return config;
-            }
-
-            RailsResource.resourceUrl = function (id) {
-                return RailsResource.url + '/' + id;
             };
 
-            RailsResource.query = function (queryParams) {
-                var promise = $http.get(RailsResource.url, httpConfig(queryParams));
-                promise = callInterceptors(promise);
+            RailsResource.processResponse = function (promise) {
+                promise = RailsResource.callInterceptors(promise);
 
                 return promise.then(function (response) {
                     var result;
@@ -197,29 +159,65 @@
                 });
             };
 
-            RailsResource.get = function (id) {
-                var promise = $http.get(RailsResource.resourceUrl(id), httpConfig());
-                promise = callInterceptors(promise);
+            RailsResource.getHttpConfig = function (queryParams) {
+                var config = angular.copy(RailsResource.httpConfig, {});
 
-                return promise.then(function (response) {
-                    return angular.isObject(response.data) ? new RailsResource(response.data) : response.data;
+                if (RailsResource.defaultParams) {
+                    config.params = RailsResource.defaultParams;
+                }
+
+                if (queryParams) {
+                    config.params = angular.extend(config.params || {}, queryParams);
+                }
+
+                return config;
+            };
+
+            RailsResource.resourceUrl = function (id) {
+                return RailsResource.url + '/' + id;
+            };
+
+            RailsResource.query = function (queryParams) {
+                return RailsResource.processResponse($http.get(RailsResource.url, RailsResource.getHttpConfig(queryParams)));
+            };
+
+            RailsResource.get = function (id) {
+                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(id), RailsResource.getHttpConfig()));
+            };
+
+            RailsResource.prototype.processResponse = function (promise) {
+                promise = promise.then(function (response) {
+                    // store off the data in case something (like our root unwrapping) assigns data as a new object
+                    response.originalData = response.data;
+                    return response;
                 });
+
+                promise = RailsResource.callInterceptors(promise);
+
+                return promise.then(angular.bind(this, function (response) {
+                    // we may not have response data
+                    if (response.hasOwnProperty('data') && angular.isObject(response.data)) {
+                        angular.extend(this, response.data);
+                    }
+
+                    return this;
+                }));
             };
 
             RailsResource.prototype.create = function () {
                 // clone so we can manipulate w/o modifying our instance
-                var data = transformData(angular.copy(this, {}));
-                return processResponse.call(this, $http.post(RailsResource.url, data, httpConfig()));
+                var data = RailsResource.transformData(angular.copy(this, {}));
+                return this.processResponse($http.post(RailsResource.url, data, RailsResource.getHttpConfig()));
             };
 
             RailsResource.prototype.update = function () {
                 // clone so we can manipulate w/o modifying our instance
-                var data = transformData(angular.copy(this, {}));
-                return processResponse.call(this, $http.put(RailsResource.resourceUrl(this.id), data, httpConfig()));
+                var data = RailsResource.transformData(angular.copy(this, {}));
+                return this.processResponse($http.put(RailsResource.resourceUrl(this.id), data, RailsResource.getHttpConfig()));
             };
 
             RailsResource.prototype.remove = RailsResource.prototype.delete = function (id) {
-                return processResponse.call(this, $http.delete(RailsResource.resourceUrl(this.id), httpConfig()));
+                return this.processResponse($http.delete(RailsResource.resourceUrl(this.id), RailsResource.getHttpConfig()));
             };
 
             return RailsResource;
