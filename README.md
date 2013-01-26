@@ -26,6 +26,7 @@ Since this is an [AngularJS](http://angularjs.org) module it of course depends o
 * [$http](http://docs.angularjs.org/api/ng.$http)
 * [$q](http://docs.angularjs.org/api/ng.$q)
 * [$injector](http://docs.angularjs.org/api/AUTO.$injector)
+* [$interpolate](http://docs.angularjs.org/api/ng.$interpolate)
 
 ## Resource Creation
 Creating a resource using this factory is similar to using $resource, you just call the factory with the config options and get back your resource.
@@ -35,7 +36,7 @@ Creating a resource using this factory is similar to using $resource, you just c
 ### Config Options
 The following options are available for the config object passed to the factory function.
 
- * **url** - This is the base url of the service.  See [Resource URLs](#resource-urls) below for more information.
+ * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
@@ -48,8 +49,18 @@ The following options are available for the config object passed to the factory 
 For example, you should specify "publishingCompany" and "publishingCompanies" instead of "publishing_company" and "publishing_companies".
 
 ## Resource URLs
-The resource url functionality is pretty basic right now.  The base url is used for query and create and the resource url
-is assumed to be the base url followed by the id.  Therefore, a base url of '/books' will result in a resource url of '/books/123'.
+The URL can be specified as one of three ways:
+1. function (context) - You can pass your own custom function that converts a context variable into a url string
+2. AngularJS expression - An expression url is evaluated at run time based on the given context for non-instance methods or the instance itself.
+  For example, given the url expression: /stores/{{storeId}}/items/{{id}}
+
+  Item.query({category: 'Software'}, {storeId: 123}) would generate a GET to /stores/1234/items?category=Software
+  Item.get({storeId: 123, id: 1}) would generate a GET to /stores/123/items/1
+
+  new Item({store: 123}).create() would generate a POST to /stores/123/items
+  new Item({id: 1, storeId: 123}).update() would generate a PUT to /stores/123/items/1
+
+3. basic string - A string without any expression variables will be treated as a base URL and assumed that instance requests should append id to the end.
 
 ## Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
@@ -93,7 +104,8 @@ Resources created using this factory have the following methods available and ea
 ### constructor
 ***
 
-The constructor function is to create new instances of the resource.
+The constructor function is used to create new instances of the resource.  The constructor is used when parsing responses but can
+also be called manually when creating new objects.
 
 ####Parameters
  * **data** *(optional)* - An object containing the data to be stored in the instance.
@@ -104,7 +116,8 @@ The constructor function is to create new instances of the resource.
 A "class" method that executes a GET request against the base url with query parameters set via the params option.
 
 ####Parameters
- * **params** - An map of strings or objects that are passed to $http to be turned into query parameters
+ * **query params** - An map of strings or objects that are passed to $http to be turned into query parameters
+ * **context** - A context object that is used during url evaluation to resolve expression variables
 
 
 ### get
@@ -113,7 +126,7 @@ A "class" method that executes a GET request against the base url with query par
 A "class" method that executes a GET request against the resource url.
 
 ####Parameters
- * **id** - The id of the resource to retrieve
+ * **context** - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
 
 
 ### create

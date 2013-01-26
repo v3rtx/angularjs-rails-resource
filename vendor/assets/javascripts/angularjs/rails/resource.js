@@ -84,7 +84,30 @@
         };
     });
 
-    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', function ($http, $q, $injector) {
+    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', '$interpolate', function ($http, $q, $injector, $interpolate) {
+        function urlBuilder(url) {
+            var expression;
+
+            if (angular.isFunction(url)) {
+                return url;
+            }
+
+            if (url.indexOf('{{') === -1) {
+                url = url + '/{{id}}';
+            }
+
+            expression = $interpolate(url);
+
+            return function (params) {
+                url = expression(params);
+
+                if (url.charAt(url.length - 1) === '/') {
+                    url = url.substr(0, url.length - 1);
+                }
+
+                return url;
+            };
+        }
 
         function railsResourceFactory(config) {
             var transformers = config.requestTransformers || ['railsRootWrappingTransformer', 'railsFieldRenamingTransformer'],
@@ -94,7 +117,7 @@
                 angular.extend(this, value || {});
             }
 
-            RailsResource.url = config.url;
+            RailsResource.url = urlBuilder(config.url);
             RailsResource.rootName = config.name;
             RailsResource.rootPluralName = config.pluralName || config.name + 's';
             RailsResource.httpConfig = config.httpConfig || {};
@@ -159,30 +182,58 @@
                 });
             };
 
-            RailsResource.getHttpConfig = function (queryParams) {
-                var config = angular.copy(RailsResource.httpConfig, {});
+            RailsResource.getParameters = function (queryParams) {
+                var params;
 
                 if (RailsResource.defaultParams) {
-                    config.params = RailsResource.defaultParams;
+                    params = RailsResource.defaultParams;
                 }
 
-                if (queryParams) {
-                    config.params = angular.extend(config.params || {}, queryParams);
+                if (angular.isObject(queryParams)) {
+                    params = angular.extend(params || {}, queryParams);
                 }
 
-                return config;
+                return params;
             };
 
-            RailsResource.resourceUrl = function (id) {
-                return RailsResource.url + '/' + id;
+            RailsResource.getHttpConfig = function (queryParams) {
+                var params = RailsResource.getParameters(queryParams);
+
+                if (params) {
+                    return angular.extend({params: params}, RailsResource.httpConfig);
+                }
+
+                return RailsResource.httpConfig;
             };
 
-            RailsResource.query = function (queryParams) {
-                return RailsResource.processResponse($http.get(RailsResource.url, RailsResource.getHttpConfig(queryParams)));
+            /**
+             * Returns a URL from the given parameters.  You can override this method on your resource definitions to provide
+             * custom logic for building your URLs or you can utilize the parameterized url strings to substitute values in the
+             * URL string.
+             *
+             * The parameters in the URL string follow the normal Angular binding expression using {{ and }} for the start/end symbols.
+             *
+             * If the context is a number and the URL string does not contain an id parameter then the number is appended
+             * to the URL string.
+             *
+             * If the context is a number and the URL string does
+             * @param context
+             * @return {string}
+             */
+            RailsResource.resourceUrl = function (context) {
+                if (!angular.isObject(context)) {
+                    context = {id: context};
+                }
+
+                return RailsResource.url(context || {});
             };
 
-            RailsResource.get = function (id) {
-                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(id), RailsResource.getHttpConfig()));
+            RailsResource.query = function (queryParams, context) {
+                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(context), RailsResource.getHttpConfig(queryParams)));
+            };
+
+            RailsResource.get = function (context, queryParams) {
+                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(context), RailsResource.getHttpConfig(queryParams)));
             };
 
             RailsResource.prototype.processResponse = function (promise) {
@@ -207,17 +258,17 @@
             RailsResource.prototype.create = function () {
                 // clone so we can manipulate w/o modifying our instance
                 var data = RailsResource.transformData(angular.copy(this, {}));
-                return this.processResponse($http.post(RailsResource.url, data, RailsResource.getHttpConfig()));
+                return this.processResponse($http.post(RailsResource.resourceUrl(this), data, RailsResource.getHttpConfig()));
             };
 
             RailsResource.prototype.update = function () {
                 // clone so we can manipulate w/o modifying our instance
                 var data = RailsResource.transformData(angular.copy(this, {}));
-                return this.processResponse($http.put(RailsResource.resourceUrl(this.id), data, RailsResource.getHttpConfig()));
+                return this.processResponse($http.put(RailsResource.resourceUrl(this), data, RailsResource.getHttpConfig()));
             };
 
-            RailsResource.prototype.remove = RailsResource.prototype.delete = function (id) {
-                return this.processResponse($http.delete(RailsResource.resourceUrl(this.id), RailsResource.getHttpConfig()));
+            RailsResource.prototype.remove = RailsResource.prototype.delete = function () {
+                return this.processResponse($http.delete(RailsResource.resourceUrl(this), RailsResource.getHttpConfig()));
             };
 
             return RailsResource;
