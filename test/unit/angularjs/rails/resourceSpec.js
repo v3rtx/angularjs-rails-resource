@@ -329,7 +329,7 @@ describe("js.rails", function () {
         it('should be able to create new instance and save it', inject(function($httpBackend) {
             var data = new Test({abcDef: 'xyz'});
 
-            $httpBackend.expectPOST('/test').respond(200, {test: {id: 123, abc_def: 'xyz'}});
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
             data.create();
             $httpBackend.flush();
 
@@ -339,13 +339,13 @@ describe("js.rails", function () {
         it('should be able to create new instance and update it', inject(function($httpBackend) {
             var data = new Test({abcDef: 'xyz'});
 
-            $httpBackend.expectPOST('/test').respond(200, {test: {id: 123, abc_def: 'xyz'}});
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
             data.create();
             $httpBackend.flush(1);
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz'});
 
-            $httpBackend.expectPUT('/test/123').respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            $httpBackend.expectPUT('/test/123', {test: {id: 123, xyz: 'abc', abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
             data.xyz = 'abc';
             data.update();
             $httpBackend.flush();
@@ -356,7 +356,7 @@ describe("js.rails", function () {
         it('create with default params should add parameter abc=1', inject(function($httpBackend) {
             var promise, Resource, data, defaultParamsConfig = {};
 
-            $httpBackend.expectPOST('/test?abc=1').respond(200, {test: {abc: 'xyz'}});
+            $httpBackend.expectPOST('/test?abc=1', {test: {}}).respond(200, {test: {abc: 'xyz'}});
 
             angular.copy(config, defaultParamsConfig);
             defaultParamsConfig.defaultParams = {abc: '1'};
@@ -371,7 +371,7 @@ describe("js.rails", function () {
         it('should be able to get resource and update it', inject(function($httpBackend) {
             var promise, result;
 
-            $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+            $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz', xyz: 'abcd'}});
 
             expect(promise = Test.get(123)).toBeDefined();
 
@@ -382,15 +382,15 @@ describe("js.rails", function () {
             $httpBackend.flush();
 
             expect(result).toBeInstanceOf(Test);
-            expect(result).toEqualData({id: 123, abc: 'xyz'});
+            expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abcd'});
 
-            $httpBackend.expectPUT('/test/123').respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            $httpBackend.expectPUT('/test/123', {test: {id: 123, abc: 'xyz', xyz: 'abc'}}).respond(200, {test: {id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'}});
             result.xyz = 'abc';
             result.update();
             $httpBackend.flush();
 
             // abc was originally set on the object so it should still be there after the update
-            expect(result).toEqualData({id: 123, abc: 'xyz', abcDef: 'xyz', xyz: 'abc', extra: 'test'});
+            expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
         }));
 
         it('update should handle 204 response', inject(function($httpBackend) {
@@ -409,7 +409,7 @@ describe("js.rails", function () {
             expect(result).toBeInstanceOf(Test);
             expect(result).toEqualData({id: 123, abc: 'xyz'});
 
-            $httpBackend.expectPUT('/test/123').respond(204);
+            $httpBackend.expectPUT('/test/123', {test: {id: 123, abc: 'xyz', xyz: 'abc'}}).respond(204);
             result.xyz = 'abc';
             result.update();
             $httpBackend.flush();
@@ -693,7 +693,7 @@ describe("js.rails", function () {
         it('should be able to create new instance and save it', inject(function($httpBackend) {
             var data = new NestedTest({nestedId: 1234, abcDef: 'xyz'});
 
-            $httpBackend.expectPOST('/nested/1234/test').respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});
+            $httpBackend.expectPOST('/nested/1234/test', {nested_test: {nested_id: 1234, abc_def: 'xyz'}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});
             data.nestedId = 1234;
             data.create();
             $httpBackend.flush();
@@ -704,14 +704,14 @@ describe("js.rails", function () {
         it('should be able to create new instance and update it', inject(function($httpBackend) {
             var data = new NestedTest({abcDef: 'xyz'});
 
-            $httpBackend.expectPOST('/nested/1234/test').respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});
+            $httpBackend.expectPOST('/nested/1234/test', {nested_test: {abc_def: 'xyz', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});
             data.nestedId = 1234;
             data.create();
             $httpBackend.flush(1);
 
             expect(data).toEqualData({id: 123, nestedId: 1234, abcDef: 'xyz'});
 
-            $httpBackend.expectPUT('/nested/1234/test/123').respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, xyz: 'abc', abc_def: 'xyz', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
             data.xyz = 'abc';
             data.update();
             $httpBackend.flush();
@@ -722,7 +722,7 @@ describe("js.rails", function () {
         it('create with default params should add parameter abc=1', inject(function($httpBackend) {
             var promise, Resource, data, defaultParamsConfig = {};
 
-            $httpBackend.expectPOST('/nested/1234/test?abc=1').respond(200, {nested_test: {abc: 'xyz'}});
+            $httpBackend.expectPOST('/nested/1234/test?abc=1', {nested_test: {nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234}});
 
             angular.copy(nestedConfig, defaultParamsConfig);
             defaultParamsConfig.defaultParams = {abc: '1'};
@@ -751,7 +751,7 @@ describe("js.rails", function () {
             expect(result).toBeInstanceOf(NestedTest);
             expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-            $httpBackend.expectPUT('/nested/1234/test/123').respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', xyz: 'abc', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
             result.xyz = 'abc';
             result.update();
             $httpBackend.flush();
@@ -776,7 +776,7 @@ describe("js.rails", function () {
             expect(result).toBeInstanceOf(NestedTest);
             expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-            $httpBackend.expectPUT('/nested/1234/test/123').respond(204);
+            $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', xyz: 'abc', nested_id: 1234}}).respond(204);
             result.xyz = 'abc';
             result.update();
             $httpBackend.flush();
@@ -802,6 +802,22 @@ describe("js.rails", function () {
 
             $httpBackend.expectDELETE('/nested/1234/test/123').respond(204);
             result.remove();
+            $httpBackend.flush();
+        }));
+
+        it('should be able to create new instance and update it', inject(function($httpBackend) {
+            var data = new NestedTest({abcDef: 'xyz'});
+
+            $httpBackend.expectPOST('/nested/1234/test', {nested_test: {abc_def: 'xyz', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});
+            data.nestedId = 1234;
+            data.create();
+            $httpBackend.flush(1);
+
+            expect(data).toEqualData({id: 123, nestedId: 1234, abcDef: 'xyz'});
+            expect(data).toBeInstanceOf(NestedTest);
+
+            $httpBackend.expectDELETE('/nested/1234/test/123').respond(204);
+            data.remove();
             $httpBackend.flush();
         }));
 
