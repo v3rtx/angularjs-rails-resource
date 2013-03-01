@@ -203,7 +203,7 @@
                     return angular.extend({params: params}, RailsResource.httpConfig);
                 }
 
-                return RailsResource.httpConfig;
+                return angular.copy(RailsResource.httpConfig);
             };
 
             /**
