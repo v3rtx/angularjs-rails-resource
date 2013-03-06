@@ -267,8 +267,9 @@
                 return this.processResponse($http.put(RailsResource.resourceUrl(this), data, RailsResource.getHttpConfig()));
             };
 
-            RailsResource.prototype.remove = RailsResource.prototype.delete = function () {
-                return this.processResponse($http.delete(RailsResource.resourceUrl(this), RailsResource.getHttpConfig()));
+            //using ['delete'] instead of .delete for IE7/8 compatibility
+            RailsResource.prototype.remove = RailsResource.prototype['delete'] = function () {
+                return this.processResponse($http['delete'](RailsResource.resourceUrl(this), RailsResource.getHttpConfig()));
             };
 
             return RailsResource;
