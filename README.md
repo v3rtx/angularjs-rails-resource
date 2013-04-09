@@ -54,7 +54,9 @@ The following options are available for the config object passed to the factory 
  * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
         if not specified the singular name with an appended 's' will be used.
- * **httpConfig** *(optional)* - Passed directly to $http.
+ * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
+     * **headers**
+         * **Accept** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -280,9 +282,9 @@ Or, if you say the user typed in the book id into a scope variable and you wante
     book.update();
 
 ## Tests
-The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Testacular](http://vojtajina.github.com/testacular/).
+The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).
 
-Running the tests should be as simple as following the [instructions](https://github.com/vojtajina/testacular/blob/master/README.md)
+Running the tests should be as simple as following the [instructions](https://github.com/karma-runner/karma)
 
 ## Contributing
 

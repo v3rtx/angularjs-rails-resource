@@ -121,6 +121,7 @@
             RailsResource.rootName = config.name;
             RailsResource.rootPluralName = config.pluralName || config.name + 's';
             RailsResource.httpConfig = config.httpConfig || {};
+            RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json'}, RailsResource.httpConfig.headers || {});
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
