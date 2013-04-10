@@ -17,3 +17,5 @@ test/version_tmp
 tmp
 test_out
 atlassian-ide-plugin.xml
+node_modules
+
