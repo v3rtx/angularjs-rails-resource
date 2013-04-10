@@ -180,10 +180,11 @@
                         result = [];
 
                         angular.forEach(response.data, function (value) {
-                            result.push(new RailsResource(value));
+                            result.push(angular.extend(new RailsResource(), value));
                         });
                     } else if (angular.isObject(response.data)) {
-                        result = new RailsResource(response.data);
+                        result = angular.extend(new RailsResource(), response.data);
+
                     } else {
                         result = response.data;
                     }
