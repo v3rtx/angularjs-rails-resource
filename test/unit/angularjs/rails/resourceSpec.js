@@ -453,6 +453,11 @@ describe("js.rails", function () {
 
             $httpBackend.flush();
         }));
+
+        it('should transform attributes on build', function() {
+            var test = new Test({id: 123, abc_def: "T"});
+            expect(test).toEqualData({id: 123, abcDef: "T"});
+        });
     });
 
     describe('plural railsResourceFactory', function() {
