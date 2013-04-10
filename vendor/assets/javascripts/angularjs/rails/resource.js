@@ -114,7 +114,17 @@
                 interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
 
             function RailsResource(value) {
-                angular.extend(this, value || {});
+                var immediatePromise = function(data) {
+                  return {
+                      response: data,
+                      then: function(callback) {
+                        this.response = callback(this.response);
+                        return immediatePromise(this.response);
+                      }
+                    }
+                };
+                var data = RailsResource.callInterceptors(immediatePromise({data: value || {}})).response.data;
+                angular.extend(this, data);
             }
 
             RailsResource.url = urlBuilder(config.url);
@@ -171,10 +181,11 @@
                         result = [];
 
                         angular.forEach(response.data, function (value) {
-                            result.push(new RailsResource(value));
+                            result.push(angular.extend(new RailsResource(), value));
                         });
                     } else if (angular.isObject(response.data)) {
-                        result = new RailsResource(response.data);
+                        result = angular.extend(new RailsResource(), response.data);
+
                     } else {
                         result = response.data;
                     }
