@@ -114,16 +114,17 @@
                 interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
 
             function RailsResource(value) {
-                if (!value) {
-                  value = {};
-                }
-                var deferred = $q.defer();
-                RailsResource.callInterceptors(deferred.promise);
-                var self = this;
-                deferred.promise.then(function(response) {
-                  angular.extend(self, response.data);
-                });
-                deferred.resolve({data: value});
+                var immediatePromise = function(data) {
+                  return {
+                      response: data,
+                      then: function(callback) {
+                        this.response = callback(this.response);
+                        return immediatePromise(this.response);
+                      }
+                    }
+                };
+                var data = RailsResource.callInterceptors(immediatePromise({data: value || {}})).response.data;
+                angular.extend(this, data);
             }
 
             RailsResource.url = urlBuilder(config.url);
