@@ -1,4 +1,5 @@
 # AngularJS Rails Resource
+[![Build Status](https://travis-ci.org/tpodom/angularjs-rails-resource.png)](https://travis-ci.org/tpodom/angularjs-rails-resource)
 
 A resource factory inspired by $resource from AngularJS and [Misko's recommendation](http://stackoverflow.com/questions/11850025/recommended-way-of-getting-data-from-the-server).
 
