@@ -240,12 +240,16 @@
                 return RailsResource.url(context || {});
             };
 
+            RailsResource.$get = function (url, queryParams) {
+                return RailsResource.processResponse($http.get(url, RailsResource.getHttpConfig(queryParams)));
+            };
+
             RailsResource.query = function (queryParams, context) {
-                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(context), RailsResource.getHttpConfig(queryParams)));
+                return RailsResource.$get(RailsResource.resourceUrl(context), queryParams);
             };
 
             RailsResource.get = function (context, queryParams) {
-                return RailsResource.processResponse($http.get(RailsResource.resourceUrl(context), RailsResource.getHttpConfig(queryParams)));
+                return RailsResource.$get(RailsResource.resourceUrl(context), queryParams);
             };
 
             RailsResource.prototype.processResponse = function (promise) {
@@ -267,16 +271,31 @@
                 }));
             };
 
+            angular.forEach(['post', 'put', 'patch'], function (method) {
+                RailsResource['$' + method] = function (url, data) {
+                    var config;
+                    // clone so we can manipulate w/o modifying the actual instance
+                    data = RailsResource.transformData(angular.copy(data, {}));
+                    config = angular.extend({method: method, url: url, data: data}, RailsResource.getHttpConfig());
+                    return RailsResource.processResponse($http(config));
+                };
+
+                RailsResource.prototype['$' + method] = function (url) {
+                    var data, config;
+                    // clone so we can manipulate w/o modifying the actual instance
+                    data = RailsResource.transformData(angular.copy(this, {}));
+                    config = angular.extend({method: method, url: url, data: data}, RailsResource.getHttpConfig());
+                    return this.processResponse($http(config));
+
+                };
+            });
+
             RailsResource.prototype.create = function () {
-                // clone so we can manipulate w/o modifying our instance
-                var data = RailsResource.transformData(angular.copy(this, {}));
-                return this.processResponse($http.post(RailsResource.resourceUrl(this), data, RailsResource.getHttpConfig()));
+                return this.$post(RailsResource.resourceUrl(this), this);
             };
 
             RailsResource.prototype.update = function () {
-                // clone so we can manipulate w/o modifying our instance
-                var data = RailsResource.transformData(angular.copy(this, {}));
-                return this.processResponse($http.put(RailsResource.resourceUrl(this), data, RailsResource.getHttpConfig()));
+                return this.$put(RailsResource.resourceUrl(this), this);
             };
 
             //using ['delete'] instead of .delete for IE7/8 compatibility
