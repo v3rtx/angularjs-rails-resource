@@ -131,7 +131,7 @@
             RailsResource.rootName = config.name;
             RailsResource.rootPluralName = config.pluralName || config.name + 's';
             RailsResource.httpConfig = config.httpConfig || {};
-            RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json'}, RailsResource.httpConfig.headers || {});
+            RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
@@ -232,7 +232,7 @@
              * @param context
              * @return {string}
              */
-            RailsResource.resourceUrl = function (context) {
+            RailsResource.$url = RailsResource.resourceUrl = function (context) {
                 if (!angular.isObject(context)) {
                     context = {id: context};
                 }
@@ -250,6 +250,10 @@
 
             RailsResource.get = function (context, queryParams) {
                 return RailsResource.$get(RailsResource.resourceUrl(context), queryParams);
+            };
+
+            RailsResource.prototype.$url = function() {
+                return RailsResource.resourceUrl(this);
             };
 
             RailsResource.prototype.processResponse = function (promise) {
@@ -291,16 +295,24 @@
             });
 
             RailsResource.prototype.create = function () {
-                return this.$post(RailsResource.resourceUrl(this), this);
+                return this.$post(this.$url(), this);
             };
 
             RailsResource.prototype.update = function () {
-                return this.$put(RailsResource.resourceUrl(this), this);
+                return this.$put(this.$url(), this);
+            };
+
+            RailsResource['$delete'] = function (url) {
+                return RailsResource.processResponse($http['delete'](url, RailsResource.getHttpConfig()));
+            };
+
+            RailsResource.prototype['$delete'] = function (url) {
+                return this.processResponse($http['delete'](url, RailsResource.getHttpConfig()));
             };
 
             //using ['delete'] instead of .delete for IE7/8 compatibility
             RailsResource.prototype.remove = RailsResource.prototype['delete'] = function () {
-                return this.processResponse($http['delete'](RailsResource.resourceUrl(this), RailsResource.getHttpConfig()));
+                return this.$delete(this.$url());
             };
 
             return RailsResource;

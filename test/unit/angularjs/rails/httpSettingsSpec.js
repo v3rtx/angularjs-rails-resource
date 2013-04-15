@@ -127,7 +127,7 @@ describe("http setting", function () {
     it('create should pass default $http options', inject(function($httpBackend) {
         var Test;
 
-        $httpBackend.expectPOST('/test', {test: {xyz: '123'}}, headerComparison({'Accept': 'application/json'})).respond(200, {test: {id: 123, xyz: '123'}});
+        $httpBackend.expectPOST('/test', {test: {xyz: '123'}}, headerComparison({'Accept': 'application/json', 'Content-Type': 'application/json'})).respond(200, {test: {id: 123, xyz: '123'}});
 
         Test = factory(config);
         var test = new Test();
@@ -166,7 +166,7 @@ describe("http setting", function () {
     it('update should pass default $http options', inject(function($httpBackend) {
         var Test;
 
-        $httpBackend.expectPUT('/test/123', {test: {id: 123, xyz: '123'}}, headerComparison({'Accept': 'application/json'})).respond(200, {test: {id: 123, xyz: '123'}});
+        $httpBackend.expectPUT('/test/123', {test: {id: 123, xyz: '123'}}, headerComparison({'Accept': 'application/json', 'Content-Type': 'application/json'})).respond(200, {test: {id: 123, xyz: '123'}});
 
         Test = factory(config);
         var test = new Test();
@@ -204,4 +204,16 @@ describe("http setting", function () {
 
         $httpBackend.flush();
     }));
+
+    it('$patch should pass default $http options', inject(function($httpBackend) {
+        var Test;
+
+        $httpBackend.expectPATCH('/test/123', {test: {id: 123, xyz: '123'}}, headerComparison({'Accept': 'application/json', 'Content-Type': 'application/json'})).respond(200, {test: {id: 123, xyz: '123'}});
+
+        Test = factory(config);
+        Test.$patch('/test/123', {id: 123, xyz: '123'});
+
+        $httpBackend.flush();
+    }));
+
 });
