@@ -129,7 +129,7 @@
             }
 
             RailsResource.setUrl = function(url) {
-              this.url = urlBuilder(url);
+              RailsResource.url = urlBuilder(url);
             };
             RailsResource.setUrl(config.url);
             RailsResource.rootName = config.name;
