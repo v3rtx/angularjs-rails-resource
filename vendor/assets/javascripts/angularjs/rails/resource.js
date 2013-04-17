@@ -85,6 +85,7 @@
     });
 
     angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', '$interpolate', function ($http, $q, $injector, $interpolate) {
+        // urlBuilder("/path/{{someId}}")(someId: 5) == "/path/5"
         function urlBuilder(url) {
             var expression;
 
@@ -127,7 +128,10 @@
                 angular.extend(this, data);
             }
 
-            RailsResource.url = urlBuilder(config.url);
+            RailsResource.setUrl = function(url) {
+              RailsResource.url = urlBuilder(url);
+            };
+            RailsResource.setUrl(config.url);
             RailsResource.rootName = config.name;
             RailsResource.rootPluralName = config.pluralName || config.name + 's';
             RailsResource.httpConfig = config.httpConfig || {};
