@@ -58,6 +58,7 @@ The following options are available for the config object passed to the factory 
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
+         * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -117,8 +118,17 @@ object to keep track of what the field was originally pointing to.  The original
 that if response.data is reassigned that there's still a pointer to the original response.data object.
 
 
-## Methods
+## Resource Methods
 Resources created using this factory have the following methods available and each one (except the constructor) returns a [Promise](#promises).
+
+### $url
+***
+
+Returns the resource URL using the given context.
+
+####Parameters
+
+ * **context** - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
 
 ### constructor
 ***
@@ -128,10 +138,19 @@ The constructor is the function returned by the railsResourceFactory and can be 
 ####Parameters
  * **data** *(optional)* - An object containing the data to be stored in the instance.
 
+### $get
+***
+
+Executes a GET request against the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+####Parameters
+ * **url** - The url to GET
+ * **queryParams** - The set of query parameters to include in the GET request
+
 ### query
 ***
 
-A "class" method that executes a GET request against the base url with query parameters set via the params option.
+Executes a GET request against the resource's base url and returns a promise that will be resolved with an array of new Resource instances.
 
 ####Parameters
  * **query params** - An map of strings or objects that are passed to $http to be turned into query parameters
@@ -141,16 +160,54 @@ A "class" method that executes a GET request against the base url with query par
 ### get
 ***
 
-A "class" method that executes a GET request against the resource url.
+Executs a GET request against the resource's url and returns a promise that will be resolved with a new instance of the Resource.
 
 ####Parameters
  * **context** - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
 
 
+### $post, $put, $patch
+***
+
+Transforms the given data and submits it using a POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+####Parameters
+ * **url** - The url to POST/PUT/PATCH
+ * **data** - The data to transform and submit to the server
+
+### $delete
+***
+
+Executes a DELETE against the given URL and returns a promise that will be resolved with a new Resource instance (if the server returns a body).
+
+####Parameters
+ * **url** - The url to POST/PUT/PATCH
+
+## Resource Instance Methods
+The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
+All of the instance methods will update the instance in-place on response and will resolve the promise with the current instance.
+
+### $url
+***
+
+Returns the url for the instance.
+
+####Parameters
+
+None
+
+### $post, $put, $patch
+***
+
+Transforms the instance and submits it using POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+####Parameters
+ * **url** - The url to POST/PUT/PATCH/DELETE
+
 ### create
 ***
 
-An "instance" method that executes a POST to the base url with the data defined in the instance.
+Transforms and submits the instance using a POST to the resource base URL.
 
 ####Parameters
 
@@ -160,7 +217,7 @@ None
 ### update
 ***
 
-An "instance" method that executes a PUT to the resource url with the data defined in the instance.
+Transforms and submits the instance using a PUT to the resource's URL.
 
 ####Parameters
 
@@ -170,7 +227,7 @@ None
 ### remove / delete
 ***
 
-Both of these are "instance" methods that execute a DELETE to the resource url.
+Execute a DELETE to the resource's url.
 
 ####Parameters
 
