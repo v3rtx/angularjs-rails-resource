@@ -115,6 +115,7 @@
                 interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
 
             function RailsResource(value) {
+                value || (value = {});
                 var immediatePromise = function(data) {
                   return {
                       response: data,
@@ -139,6 +140,14 @@
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
+            RailsResource.beforeResponse = function(fn) {
+              RailsResource.responseInterceptors.push(function(promise) {
+                return promise.then(function(response) {
+                  fn(response.data);
+                  return response;
+                });
+              });
+            };
 
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
