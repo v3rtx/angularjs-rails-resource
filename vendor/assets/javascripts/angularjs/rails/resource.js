@@ -115,11 +115,13 @@
                 interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
 
             function RailsResource(value) {
+                value || (value = {});
                 var immediatePromise = function(data) {
                   return {
+                      resource: RailsResource,
                       response: data,
                       then: function(callback) {
-                        this.response = callback(this.response);
+                        this.response = callback(this.response, this.resource);
                         return immediatePromise(this.response);
                       }
                     }
@@ -139,6 +141,25 @@
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
+
+            // Add a function to run on response / initialize data
+            // model methods and this are not yet available at this point
+            RailsResource.beforeResponse = function(fn) {
+              RailsResource.responseInterceptors.push(function(promise) {
+                return promise.then(function(response) {
+                  fn(response.data, promise.resource);
+                  return response;
+                });
+              });
+            };
+
+            // Add a function to run on request data
+            RailsResource.beforeRequest = function(fn) {
+              RailsResource.requestTransformers.push(function(data, resource) {
+                fn(data, resource);
+                return data;
+              });
+            };
 
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
