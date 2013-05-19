@@ -16,7 +16,7 @@
 
         function railsSerializer(options, customizer) {
 
-            function Serializer(options, customizer) {
+            function Serializer() {
                 if (angular.isFunction(options)) {
                     customizer = options;
                     options = {};
@@ -175,7 +175,7 @@
                 return result;
             };
 
-            return new Serializer(options, customizer);
+            return new Serializer();
 
         }
 
