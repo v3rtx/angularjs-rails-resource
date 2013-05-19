@@ -1,4 +1,4 @@
-describe("nested urls", function () {
+describe('nested urls', function () {
     'use strict';
 
     beforeEach(module('rails'));
@@ -198,7 +198,7 @@ describe("nested urls", function () {
 
         expect(data).toEqualData({id: 123, nestedId: 1234, abcDef: 'xyz'});
 
-        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, xyz: 'abc', abc_def: 'xyz', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {abc_def: 'xyz', nested_id: 1234, id: 123, xyz: 'abc'}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
         data.xyz = 'abc';
         data.update();
         $httpBackend.flush();
@@ -238,7 +238,7 @@ describe("nested urls", function () {
         expect(result).toBeInstanceOf(NestedTest);
         expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', xyz: 'abc', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', nested_id: 1234, xyz: 'abc'}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
         result.xyz = 'abc';
         result.update();
         $httpBackend.flush();
@@ -263,7 +263,7 @@ describe("nested urls", function () {
         expect(result).toBeInstanceOf(NestedTest);
         expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', xyz: 'abc', nested_id: 1234}}).respond(204);
+        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', nested_id: 1234, xyz: 'abc'}}).respond(204);
         result.xyz = 'abc';
         result.update();
         $httpBackend.flush();
@@ -292,7 +292,7 @@ describe("nested urls", function () {
         $httpBackend.flush();
     }));
 
-    it('should be able to create new instance and update it', inject(function($httpBackend) {
+    it('should be able to create new instance and delete it', inject(function($httpBackend) {
         var data = new NestedTest({abcDef: 'xyz'});
 
         $httpBackend.expectPOST('/nested/1234/test', {nested_test: {abc_def: 'xyz', nested_id: 1234}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz'}});

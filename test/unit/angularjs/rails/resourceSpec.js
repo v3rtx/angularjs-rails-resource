@@ -1,4 +1,4 @@
-describe("railsResourceFactory", function () {
+describe('railsResourceFactory', function () {
     'use strict';
 
     beforeEach(module('rails'));
@@ -214,7 +214,7 @@ describe("railsResourceFactory", function () {
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz'});
 
-            $httpBackend.expectPUT('/test/123', {test: {id: 123, xyz: 'abc', abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            $httpBackend.expectPUT('/test/123', {test: {abc_def: 'xyz', id: 123, xyz: 'abc'}}).respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
             data.xyz = 'abc';
             data.update();
             $httpBackend.flush();

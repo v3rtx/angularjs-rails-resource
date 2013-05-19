@@ -1,6 +1,4 @@
 (function (undefined) {
-    angular.module('rails', ['ng']);
-
     function transformObject(data, transform) {
         var newKey;
 
@@ -18,39 +16,20 @@
         }
     }
 
-    function camelize(key) {
-        if (!angular.isString(key)) {
-            return key;
-        }
 
-        // should this match more than word and digit characters?
-        return key.replace(/_[\w\d]/g, function (match, index, string) {
-            return index === 0 ? match : string.charAt(index + 1).toUpperCase();
-        });
-    }
 
-    function underscore(key) {
-        if (!angular.isString(key)) {
-            return key;
-        }
-
-        return key.replace(/[A-Z]/g, function (match, index) {
-            return index === 0 ? match : '_' + match.toLowerCase();
-        });
-    }
-
-    angular.module('rails').factory('railsFieldRenamingTransformer', function () {
+    angular.module('rails').factory('railsFieldRenamingTransformer', ['RailsInflector', function (RailsInflector) {
 
         return function (data) {
-            transformObject(data, underscore);
+            transformObject(data, RailsInflector.underscore);
             return data;
         };
-    });
+    }]);
 
-    angular.module('rails').factory('railsFieldRenamingInterceptor', function () {
+    angular.module('rails').factory('railsFieldRenamingInterceptor', function (RailsInflector) {
         return function (promise) {
             return promise.then(function (response) {
-                transformObject(response.data, camelize);
+                transformObject(response.data, RailsInflector.camelize);
                 return response;
             });
         };
@@ -84,35 +63,28 @@
         };
     });
 
-    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', '$interpolate', function ($http, $q, $injector, $interpolate) {
-        // urlBuilder("/path/{{someId}}")(someId: 5) == "/path/5"
-        function urlBuilder(url) {
-            var expression;
+    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsInflector',
+            function ($http, $q, $injector, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsInflector) {
 
-            if (angular.isFunction(url)) {
-                return url;
+        function injectFactory(factory) {
+            if (factory) {
+                return angular.isString(factory) ? $injector.get(factory) : $injector.invoke(factory)
             }
 
-            if (url.indexOf('{{') === -1) {
-                url = url + '/{{id}}';
+            return undefined;
+        }
+
+        function injectService(service) {
+            if (service) {
+                return angular.isString(service) ? $injector.get(service) : service;
             }
 
-            expression = $interpolate(url);
-
-            return function (params) {
-                url = expression(params);
-
-                if (url.charAt(url.length - 1) === '/') {
-                    url = url.substr(0, url.length - 1);
-                }
-
-                return url;
-            };
+            return undefined;
         }
 
         function railsResourceFactory(config) {
-            var transformers = config.requestTransformers || ['railsRootWrappingTransformer', 'railsFieldRenamingTransformer'],
-                interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
+            var transformers = config.requestTransformers,
+                interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor'];
 
             function RailsResource(value) {
                 value || (value = {});
@@ -131,16 +103,19 @@
             }
 
             RailsResource.setUrl = function(url) {
-              RailsResource.url = urlBuilder(url);
+              RailsResource.url = railsUrlBuilder(url);
             };
             RailsResource.setUrl(config.url);
-            RailsResource.rootName = config.name;
-            RailsResource.rootPluralName = config.pluralName || config.name + 's';
+
+            RailsResource.rootName = RailsInflector.underscore(config.name);
+            RailsResource.rootPluralName = RailsInflector.underscore(config.pluralName || config.name + 's');
+            RailsResource.enableRootWrapping = config.wrapData === undefined ? true : config.wrapData;
             RailsResource.httpConfig = config.httpConfig || {};
             RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
+            RailsResource.serializer = injectService(config.serializer || railsSerializer());
 
             // Add a function to run on response / initialize data
             // model methods and this are not yet available at this point
@@ -163,19 +138,11 @@
 
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
-                RailsResource.responseInterceptors.push(
-                    angular.isString(interceptor)
-                        ? $injector.get(interceptor)
-                        : $injector.invoke(interceptor)
-                );
+                RailsResource.responseInterceptors.push(injectFactory(interceptor));
             });
 
             angular.forEach(transformers, function (transformer) {
-                RailsResource.requestTransformers.push(
-                    angular.isString(transformer)
-                        ? $injector.get(transformer)
-                        : $injector.invoke(transformer)
-                );
+                RailsResource.requestTransformers.push(injectFactory(transformer));
             });
 
             RailsResource.transformData = function (data) {
@@ -183,10 +150,20 @@
                     data = transformer(data, RailsResource);
                 });
 
+                data = RailsResource.serializer.serialize(data);
+
+                if (RailsResource.enableRootWrapping) {
+                    data = railsRootWrappingTransformer(data, RailsResource);
+                }
+
                 return data;
             };
 
             RailsResource.callInterceptors = function (promise) {
+                if (RailsResource.enableRootWrapping) {
+                    promise.resource = RailsResource;
+                    promise = railsRootWrappingInterceptor(promise);
+                }
 
                 angular.forEach(RailsResource.responseInterceptors, function (interceptor) {
                     promise.resource = RailsResource;

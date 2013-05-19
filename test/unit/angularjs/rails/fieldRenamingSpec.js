@@ -1,4 +1,4 @@
-describe("field renaming", function () {
+describe('field renaming', function () {
     'use strict';
 
     beforeEach(module('rails'));
