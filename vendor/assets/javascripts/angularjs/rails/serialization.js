@@ -6,9 +6,10 @@
             exclusionMatchers: ['$']
         };
 
+        // TODO extract this into a helper since it's used here and in railsResourceFactory
         function injectService(service) {
             if (service) {
-                return angular.isString(service) ? $injector.get(service) : $injector.invoke(service)
+                return angular.isString(service) ? $injector.get(service) : service;
             }
 
             return undefined;
