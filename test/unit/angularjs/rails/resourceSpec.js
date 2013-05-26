@@ -1,20 +1,32 @@
 describe('railsResourceFactory', function () {
     'use strict';
 
-    beforeEach(module('rails'));
+    beforeEach(function() {
+        module('rails');
+
+        angular.module('rails').factory('railsTestInterceptor', function () {
+            return function (promise) {
+                return promise.then(function (response) {
+                    response.data.interceptorAdded = 'x';
+                    return response;
+                });
+            }
+        });
+    });
 
     describe('singular', function() {
-        var $httpBackend, $rootScope, factory, Test,
+        var $httpBackend, $rootScope, factory, Test, testInterceptor,
             config = {
                 url: '/test',
                 name: 'test'
             };
 
-        beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory) {
+        beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory, railsTestInterceptor) {
             $httpBackend = _$httpBackend_;
             $rootScope = _$rootScope_;
             factory = railsResourceFactory;
             Test = railsResourceFactory(config);
+            testInterceptor = railsTestInterceptor;
         }));
 
         afterEach(function() {
@@ -153,48 +165,6 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
         }));
 
-        it('should be able to turn off root mapping and field renaming', inject(function($httpBackend) {
-            var promise, result, resource;
-
-            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
-
-            resource = factory(config);
-            resource.responseInterceptors = [];
-            resource.requestTransformers = [];
-            expect(promise = resource.get(123)).toBeDefined();
-
-            promise.then(function (response) {
-                result = response;
-            });
-
-            $httpBackend.flush();
-
-            expect(result).toBeInstanceOf(resource);
-            expect(result).toEqualData({id: 123, abc_def: 'xyz'});
-        }));
-
-        it('should be able to turn off root mapping but keep field renaming', inject(function($httpBackend) {
-            var promise, result, resource, testConfig = {};
-
-            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
-
-            angular.copy(config, testConfig);
-            testConfig.requestTransformers = [];
-            testConfig.responseInterceptors = ['railsFieldRenamingInterceptor'];
-            resource = factory(testConfig);
-
-            expect(promise = resource.get(123)).toBeDefined();
-
-            promise.then(function (response) {
-                result = response;
-            });
-
-            $httpBackend.flush();
-
-            expect(result).toBeInstanceOf(resource);
-            expect(result).toEqualData({id: 123, abcDef: 'xyz'});
-        }));
-
         it('should be able to create new instance and save it', inject(function($httpBackend) {
             var data = new Test({abcDef: 'xyz'});
 
@@ -327,6 +297,51 @@ describe('railsResourceFactory', function () {
             var test = new Test({id: 123, abc_def: "T"});
             expect(test).toEqualData({id: 123, abcDef: "T"});
         });
+
+        it('should be able to reference interceptor using name', inject(function($httpBackend) {
+            var promise, result, resource, testConfig = {};
+
+            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
+
+
+            angular.copy(config, testConfig);
+            testConfig.responseInterceptors = ['railsFieldRenamingInterceptor', 'railsTestInterceptor'];
+            resource = factory(testConfig);
+
+            expect(promise = resource.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(resource);
+            expect(result).toEqualData({interceptorAdded: 'x', id: 123, abcDef: 'xyz'});
+        }));
+
+        it('should be able to add interceptor using reference', inject(function($httpBackend) {
+            var promise, result, resource, testConfig = {};
+
+            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
+
+
+            angular.copy(config, testConfig);
+            testConfig.responseInterceptors = ['railsFieldRenamingInterceptor', testInterceptor];
+            resource = factory(testConfig);
+
+            expect(promise = resource.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(resource);
+            expect(result).toEqualData({interceptorAdded: 'x', id: 123, abcDef: 'xyz'});
+        }));
+
 
         angular.forEach(['post', 'put', 'patch'], function (method) {
             it('should be able to ' + method + ' to arbitrary url', inject(function($httpBackend) {

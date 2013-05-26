@@ -1,17 +1,22 @@
 describe('railsUrlSerializer', function () {
     'use strict';
-    var factory;
+    var factory, railsInjector;
 
+    function createSerializer(options, customizer) {
+        return railsInjector.createService(factory(options, customizer));
+    }
+    
     beforeEach(module('rails'));
 
-    beforeEach(inject(function (railsSerializer) {
+    beforeEach(inject(function (railsSerializer, RailsResourceInjector) {
         factory = railsSerializer;
+        railsInjector = RailsResourceInjector;
     }));
 
     it('should support customizer being first parameter', function () {
         var called = false;
 
-        factory(function () {
+        createSerializer(function () {
             called = true;
         });
 
@@ -21,7 +26,7 @@ describe('railsUrlSerializer', function () {
     it('should support customizer with options as first parameter', function () {
         var called = false;
 
-        factory({}, function () {
+        createSerializer({}, function () {
             called = true;
         });
 
@@ -33,7 +38,7 @@ describe('railsUrlSerializer', function () {
         var serializer;
 
         beforeEach(function() {
-            serializer = factory();
+            serializer = createSerializer();
         });
 
         it('should underscore attributes on single object', function () {
@@ -71,7 +76,7 @@ describe('railsUrlSerializer', function () {
     describe('custom options', function () {
         it('should allow overriding attribute transformation function with undefined', function () {
             var test,
-                serializer = factory({underscore: undefined});
+                serializer = createSerializer({underscore: undefined});
 
             test = {id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin'};
             expect(serializer.serialize(test)).toEqualData(test);
@@ -79,7 +84,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow overriding attribute transformation with custom function', function () {
             var result,
-                serializer = factory({underscore: function (attribute) { return 'x' + attribute}});
+                serializer = createSerializer({underscore: function (attribute) { return 'x' + attribute}});
 
             result = serializer.serialize({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin'});
             expect(result).toEqualData({xid: 1, xfirstName: 'George', xmiddleName: 'R. R.', xlastName: 'Martin'});
@@ -87,7 +92,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow safely ignore null excludePrefixes', function () {
             var result,
-                serializer = factory({exclusionMatchers: null});
+                serializer = createSerializer({exclusionMatchers: null});
 
             result = serializer.serialize({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({id: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin', $birthDate: '1948-09-20'});
@@ -95,7 +100,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow safely ignore undefined excludePrefixes', function () {
             var result,
-                serializer = factory({exclusionMatchers: undefined});
+                serializer = createSerializer({exclusionMatchers: undefined});
 
             result = serializer.serialize({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({id: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin', $birthDate: '1948-09-20'});
@@ -103,7 +108,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow empty excludePrefixes', function () {
             var result,
-                serializer = factory({exclusionMatchers: []});
+                serializer = createSerializer({exclusionMatchers: []});
 
             result = serializer.serialize({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({id: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin', $birthDate: '1948-09-20'});
@@ -111,7 +116,7 @@ describe('railsUrlSerializer', function () {
 
         it('should treat exclusionMatcher strings as prefix exclusions', function () {
             var result,
-                serializer = factory({exclusionMatchers: ['x']});
+                serializer = createSerializer({exclusionMatchers: ['x']});
 
             result = serializer.serialize({xid: 1, firstNamex: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({first_namex: 'George', middle_name: 'R. R.', last_name: 'Martin', $birthDate: '1948-09-20'});
@@ -119,7 +124,7 @@ describe('railsUrlSerializer', function () {
 
         it('should use combination of string prefix, function, and regexp for exclusions', function () {
             var result,
-                serializer = factory({exclusionMatchers: ['x', /^$/, function (key) { return key === 'middleName'; }]});
+                serializer = createSerializer({exclusionMatchers: ['x', /^$/, function (key) { return key === 'middleName'; }]});
 
             result = serializer.serialize({xid: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({first_name: 'George', last_name: 'Martin'});
@@ -141,7 +146,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow single exclusion', function () {
             var result,
-                serializer = factory(function (config) {
+                serializer = createSerializer(function (config) {
                     config.exclude('books');
                 });
 
@@ -151,7 +156,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow variable exclusions', function () {
             var result,
-                serializer = factory(function (config) {
+                serializer = createSerializer(function (config) {
                     config.exclude('books', 'birthDate');
                 });
 
@@ -161,7 +166,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow renaming attributes', function () {
             var result,
-                serializer = factory(function (config) {
+                serializer = createSerializer(function (config) {
                     // this & config should be interchangeable
                     this.exclude('books', 'birthDate');
                     this.rename('id', 'authorId');
@@ -176,7 +181,7 @@ describe('railsUrlSerializer', function () {
 
         it('should allow nested attributes', function () {
             var result,
-                serializer = factory(function () {
+                serializer = createSerializer(function () {
                     this.nestedAttribute('books')
                 });
 
@@ -189,7 +194,7 @@ describe('railsUrlSerializer', function () {
 
         it('should add custom attribute from function', function () {
             var result,
-                serializer = factory(function () {
+                serializer = createSerializer(function () {
                     this.add('numBooks', function (author) {
                         return author.books.length;
                     });
@@ -201,12 +206,35 @@ describe('railsUrlSerializer', function () {
 
         it('should add custom attribute from constant value', function () {
             var result,
-                serializer = factory(function () {
+                serializer = createSerializer(function () {
                     this.add('numBooks', 2);
                 });
 
             result = serializer.serialize(author);
             expect(result['num_books']).toBe(2);
+        });
+    });
+
+    describe('default exclusion serialization', function() {
+        it('should only serialize id', function () {
+            var result,
+                serializer = createSerializer(function (config) {
+                    // this & config should be interchangeable
+                    this.only('id');
+                });
+
+            result = serializer.serialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
+            expect(result).toEqualData({id: 1});
+        });
+
+        it('should only serialize id and last', function () {
+            var result,
+                serializer = createSerializer(function (config) {
+                    this.only('id', 'last');
+                });
+
+            result = serializer.serialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
+            expect(result).toEqualData({id: 1, last: 'Martin'});
         });
     });
 });

@@ -63,24 +63,10 @@
         };
     });
 
-    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsInflector',
-            function ($http, $q, $injector, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsInflector) {
+    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsInflector', 'RailsResourceInjector',
+            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsInflector, RailsResourceInjector) {
 
-        function injectFactory(factory) {
-            if (factory) {
-                return angular.isString(factory) ? $injector.get(factory) : $injector.invoke(factory)
-            }
 
-            return undefined;
-        }
-
-        function injectService(service) {
-            if (service) {
-                return angular.isString(service) ? $injector.get(service) : service;
-            }
-
-            return undefined;
-        }
 
         function railsResourceFactory(config) {
             var transformers = config.requestTransformers,
@@ -115,7 +101,7 @@
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
-            RailsResource.serializer = injectService(config.serializer || railsSerializer());
+            RailsResource.serializer = RailsResourceInjector.createService(config.serializer || railsSerializer());
 
             // Add a function to run on response / initialize data
             // model methods and this are not yet available at this point
@@ -138,11 +124,11 @@
 
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
-                RailsResource.responseInterceptors.push(injectFactory(interceptor));
+                RailsResource.responseInterceptors.push(RailsResourceInjector.getDependency(interceptor));
             });
 
             angular.forEach(transformers, function (transformer) {
-                RailsResource.requestTransformers.push(injectFactory(transformer));
+                RailsResource.requestTransformers.push(RailsResourceInjector.getDependency(transformer));
             });
 
             RailsResource.transformData = function (data) {

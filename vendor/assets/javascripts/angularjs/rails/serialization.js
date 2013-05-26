@@ -1,19 +1,11 @@
 (function (undefined) {
-    angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector', function ($injector, RailsInflector) {
+    angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector', 'RailsResourceInjector', function ($injector, RailsInflector, RailsResourceInjector) {
         var defaultOptions = {
             underscore: RailsInflector.underscore,
             camelize: RailsInflector.camelize,
-            exclusionMatchers: ['$']
+            exclusionMatchers: ['$'],
+            excludeByDefault: false
         };
-
-        // TODO extract this into a helper since it's used here and in railsResourceFactory
-        function injectService(service) {
-            if (service) {
-                return angular.isString(service) ? $injector.get(service) : service;
-            }
-
-            return undefined;
-        }
 
         function railsSerializer(options, customizer) {
 
@@ -24,6 +16,7 @@
                 }
 
                 this.exclusions = {};
+                this.inclusions = {};
                 this.serializeMappings = {};
                 this.customSerializedAttributes = {};
                 this.customSerializers = {};
@@ -40,7 +33,16 @@
                 var exclusions = this.exclusions;
 
                 angular.forEach(arguments, function (key) {
-                    exclusions[key] = true;
+                    exclusions[key] = false;
+                });
+            };
+
+            Serializer.prototype.only = function () {
+                var inclusions = this.inclusions;
+                this.options.excludeByDefault = true;
+
+                angular.forEach(arguments, function (key) {
+                    inclusions[key] = true;
                 });
             };
 
@@ -73,7 +75,7 @@
             };
 
             Serializer.prototype.isExcluded = function (key) {
-                if (this.exclusions.hasOwnProperty(key)) {
+                if ((this.options.excludeByDefault && !this.inclusions.hasOwnProperty(key)) || this.exclusions.hasOwnProperty(key)) {
                     return true;
                 }
 
@@ -115,11 +117,13 @@
                     serializer = this.customSerializers[key];
 
                 // custom serializer takes precedence over resource serializer
-                if (!serializer && resource) {
-                    serializer = injectService(resource).serializer;
+                if (serializer) {
+                    return RailsResourceInjector.createService(serializer)
+                } else if (resource) {
+                    return RailsResourceInjector.getDependency(resource).serializer;
                 }
 
-                return injectService(serializer);
+                return undefined;
             };
 
 
@@ -137,6 +141,7 @@
                     result = {};
 
                     angular.forEach(data, function (value, key) {
+                        // if the value is a function then it can't be serialized to JSON so we'll just skip it
                         if (!angular.isFunction(value)) {
                             self.serializeAttribute(result, key, value);
                         }
@@ -176,7 +181,7 @@
                 return result;
             };
 
-            return new Serializer();
+            return Serializer;
 
         }
 
