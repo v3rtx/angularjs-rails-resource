@@ -1,40 +1,4 @@
 (function (undefined) {
-    function transformObject(data, transform) {
-        var newKey;
-
-        if (data && angular.isObject(data)) {
-            angular.forEach(data, function (value, key) {
-                newKey = transform(key);
-
-                if (newKey !== key) {
-                    data[newKey] = value;
-                    delete data[key];
-                }
-
-                transformObject(value, transform);
-            });
-        }
-    }
-
-
-
-    angular.module('rails').factory('railsFieldRenamingTransformer', ['RailsInflector', function (RailsInflector) {
-
-        return function (data) {
-            transformObject(data, RailsInflector.underscore);
-            return data;
-        };
-    }]);
-
-    angular.module('rails').factory('railsFieldRenamingInterceptor', function (RailsInflector) {
-        return function (promise) {
-            return promise.then(function (response) {
-                transformObject(response.data, RailsInflector.camelize);
-                return response;
-            });
-        };
-    });
-
     angular.module('rails').factory('railsRootWrappingTransformer', function () {
         return function (data, resource) {
             var result = {};
@@ -70,22 +34,24 @@
 
         function railsResourceFactory(config) {
             var transformers = config.requestTransformers,
-                interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor'];
+                interceptors = config.responseInterceptors;
 
             function RailsResource(value) {
-                value || (value = {});
-                var immediatePromise = function(data) {
-                  return {
-                      resource: RailsResource,
-                      response: data,
-                      then: function(callback) {
-                        this.response = callback(this.response, this.resource);
-                        return immediatePromise(this.response);
-                      }
-                    }
-                };
-                var data = RailsResource.callInterceptors(immediatePromise({data: value || {}})).response.data;
-                angular.extend(this, data);
+                if (value) {
+                    var immediatePromise = function(data) {
+                      return {
+                          resource: RailsResource,
+                          response: data,
+                          then: function(callback) {
+                            this.response = callback(this.response, this.resource);
+                            return immediatePromise(this.response);
+                          }
+                        }
+                    };
+
+                    var data = RailsResource.callInterceptors(immediatePromise({data: value})).response.data;
+                    angular.extend(this, data);
+                }
             }
 
             RailsResource.setUrl = function(url) {
@@ -94,7 +60,7 @@
             RailsResource.setUrl(config.url);
 
             RailsResource.rootName = RailsInflector.underscore(config.name);
-            RailsResource.rootPluralName = RailsInflector.underscore(config.pluralName || config.name + 's');
+            RailsResource.rootPluralName = RailsInflector.underscore(config.pluralName || RailsInflector.pluralize(config.name));
             RailsResource.enableRootWrapping = config.wrapData === undefined ? true : config.wrapData;
             RailsResource.httpConfig = config.httpConfig || {};
             RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
@@ -146,6 +112,12 @@
             };
 
             RailsResource.callInterceptors = function (promise) {
+                promise = promise.then(function (response) {
+                    // store off the data in case something (like our root unwrapping) assigns data as a new object
+                    response.originalData = response.data;
+                    return response;
+                });
+
                 if (RailsResource.enableRootWrapping) {
                     promise.resource = RailsResource;
                     promise = railsRootWrappingInterceptor(promise);
@@ -156,29 +128,15 @@
                     promise = interceptor(promise);
                 });
 
-                return promise;
+                return promise.then(function (response) {
+                    response.data = RailsResource.serializer.deserialize(response.data, RailsResource);
+                    return response;
+                });
             };
 
             RailsResource.processResponse = function (promise) {
-                promise = RailsResource.callInterceptors(promise);
-
-                return promise.then(function (response) {
-                    var result;
-
-                    if (angular.isArray(response.data)) {
-                        result = [];
-
-                        angular.forEach(response.data, function (value) {
-                            result.push(angular.extend(new RailsResource(), value));
-                        });
-                    } else if (angular.isObject(response.data)) {
-                        result = angular.extend(new RailsResource(), response.data);
-
-                    } else {
-                        result = response.data;
-                    }
-
-                    return result;
+                return RailsResource.callInterceptors(promise).then(function (response) {
+                    return response.data;
                 });
             };
 
@@ -245,12 +203,6 @@
             };
 
             RailsResource.prototype.processResponse = function (promise) {
-                promise = promise.then(function (response) {
-                    // store off the data in case something (like our root unwrapping) assigns data as a new object
-                    response.originalData = response.data;
-                    return response;
-                });
-
                 promise = RailsResource.callInterceptors(promise);
 
                 return promise.then(angular.bind(this, function (response) {

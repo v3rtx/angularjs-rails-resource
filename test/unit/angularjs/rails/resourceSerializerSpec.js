@@ -106,5 +106,23 @@ describe('railsResourceFactory', function () {
             data.create();
             $httpBackend.flush();
         }));
+
+        it('create should construct nested resource objects', inject(function($httpBackend) {
+            var promise, result;
+
+            $httpBackend.expectGET('/authors/1').respond(200, {author: {id: 123, first_name: 'George', last_name: 'Martin', middle_name: 'R. R.', books: [{id: 1, title: 'A Game of Thrones', publication_date: '1996-08-06', pages: 694}]}});
+            expect(promise = Author.get(1)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(Author);
+            expect(result['books']).toBeDefined();
+            expect(result['books'].length).toBe(1);
+            expect(result['books'][0]).toBeInstanceOf(Book);
+        }));
     });
 });

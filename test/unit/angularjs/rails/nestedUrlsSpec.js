@@ -135,48 +135,6 @@ describe('nested urls', function () {
         $httpBackend.flush();
     }));
 
-    it('should be able to turn off root mapping and field renaming', inject(function($httpBackend) {
-        var promise, result, resource;
-
-        $httpBackend.expectGET('/nested/1234/test/123').respond(200, {id: 123, nested_id: 1234, abc_def: 'xyz'});
-
-        resource = factory(nestedConfig);
-        resource.responseInterceptors = [];
-        resource.requestTransformers = [];
-        expect(promise = resource.get({nestedId: 1234, id: 123})).toBeDefined();
-
-        promise.then(function (response) {
-            result = response;
-        });
-
-        $httpBackend.flush();
-
-        expect(result).toBeInstanceOf(resource);
-        expect(result).toEqualData({id: 123, nested_id: 1234, abc_def: 'xyz'});
-    }));
-
-    it('should be able to turn off root mapping but keep field renaming', inject(function($httpBackend) {
-        var promise, result, resource, testConfig = {};
-
-        $httpBackend.expectGET('/nested/1234/test/123').respond(200, {id: 123, nested_id: 1234, abc_def: 'xyz'});
-
-        angular.copy(nestedConfig, testConfig);
-        testConfig.requestTransformers = [];
-        testConfig.responseInterceptors = ['railsFieldRenamingInterceptor'];
-        resource = factory(testConfig);
-
-        expect(promise = resource.get({nestedId: 1234, id: 123})).toBeDefined();
-
-        promise.then(function (response) {
-            result = response;
-        });
-
-        $httpBackend.flush();
-
-        expect(result).toBeInstanceOf(resource);
-        expect(result).toEqualData({id: 123, nestedId: 1234, abcDef: 'xyz'});
-    }));
-
     it('should be able to create new instance and save it', inject(function($httpBackend) {
         var data = new NestedTest({nestedId: 1234, abcDef: 'xyz'});
 
@@ -238,7 +196,7 @@ describe('nested urls', function () {
         expect(result).toBeInstanceOf(NestedTest);
         expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', nested_id: 1234, xyz: 'abc'}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, nested_id: 1234, abc: 'xyz', xyz: 'abc'}}).respond(200, {nested_test: {id: 123, nested_id: 1234, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
         result.xyz = 'abc';
         result.update();
         $httpBackend.flush();
@@ -263,7 +221,7 @@ describe('nested urls', function () {
         expect(result).toBeInstanceOf(NestedTest);
         expect(result).toEqualData({id: 123, nestedId: 1234, abc: 'xyz'});
 
-        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, abc: 'xyz', nested_id: 1234, xyz: 'abc'}}).respond(204);
+        $httpBackend.expectPUT('/nested/1234/test/123', {nested_test: {id: 123, nested_id: 1234, abc: 'xyz', xyz: 'abc'}}).respond(204);
         result.xyz = 'abc';
         result.update();
         $httpBackend.flush();

@@ -305,7 +305,7 @@ describe('railsResourceFactory', function () {
 
 
             angular.copy(config, testConfig);
-            testConfig.responseInterceptors = ['railsFieldRenamingInterceptor', 'railsTestInterceptor'];
+            testConfig.responseInterceptors = ['railsTestInterceptor'];
             resource = factory(testConfig);
 
             expect(promise = resource.get(123)).toBeDefined();
@@ -327,7 +327,7 @@ describe('railsResourceFactory', function () {
 
 
             angular.copy(config, testConfig);
-            testConfig.responseInterceptors = ['railsFieldRenamingInterceptor', testInterceptor];
+            testConfig.responseInterceptors = [testInterceptor];
             resource = factory(testConfig);
 
             expect(promise = resource.get(123)).toBeDefined();

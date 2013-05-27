@@ -16,14 +16,21 @@
                 return key;
             }
 
+            // TODO match the latest logic from Active Support
             return key.replace(/[A-Z]/g, function (match, index) {
                 return index === 0 ? match : '_' + match.toLowerCase();
             });
         }
 
+        function pluralize(value) {
+            // TODO match Active Support
+            return value + 's';
+        }
+
         return {
             camelize: camelize,
-            underscore: underscore
+            underscore: underscore,
+            pluralize: pluralize
         }
     });
 }());
