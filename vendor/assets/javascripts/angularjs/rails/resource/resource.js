@@ -27,10 +27,8 @@
         };
     });
 
-    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsInflector', 'RailsResourceInjector',
-            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsInflector, RailsResourceInjector) {
-
-
+    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
+            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
         function railsResourceFactory(config) {
             var transformers = config.requestTransformers,
@@ -59,8 +57,6 @@
             };
             RailsResource.setUrl(config.url);
 
-            RailsResource.rootName = RailsInflector.underscore(config.name);
-            RailsResource.rootPluralName = RailsInflector.underscore(config.pluralName || RailsInflector.pluralize(config.name));
             RailsResource.enableRootWrapping = config.wrapData === undefined ? true : config.wrapData;
             RailsResource.httpConfig = config.httpConfig || {};
             RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
@@ -68,6 +64,8 @@
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
             RailsResource.serializer = RailsResourceInjector.createService(config.serializer || railsSerializer());
+            RailsResource.rootName = RailsResource.serializer.underscore(config.name);
+            RailsResource.rootPluralName = RailsResource.serializer.underscore(config.pluralName || RailsResource.serializer.pluralize(config.name));
 
             // Add a function to run on response / initialize data
             // model methods and this are not yet available at this point

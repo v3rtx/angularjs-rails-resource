@@ -4,6 +4,7 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
     var defaultOptions = {
         underscore: RailsInflector.underscore,
         camelize: RailsInflector.camelize,
+        pluralize: RailsInflector.pluralize,
         exclusionMatchers: ['$'],
         excludeByDefault: false
     };
@@ -200,11 +201,7 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
                 return undefined;
             }
 
-            if (this.options.underscore) {
-                return this.options.underscore(mappedName);
-            }
-
-            return mappedName;
+            return this.underscore(mappedName);
         };
 
         /**
@@ -217,11 +214,7 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
          * @returns {*} undefined if the attribute should be excluded or the mapped attribute name
          */
         Serializer.prototype.getDeserializedAttributeName = function (attributeName) {
-            var camelizedName = attributeName;
-
-            if (this.options.camelize) {
-                camelizedName = this.options.camelize(attributeName);
-            }
+            var camelizedName = this.camelize(attributeName);
 
             camelizedName = this.deserializeMappings[attributeName]
                 || this.deserializeMappings[camelizedName]
@@ -414,6 +407,27 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
             // just calls deserializeValue for now so we can more easily add on custom attribute logic for deserialize too
             return this.deserializeValue(data, Resource);
         };
+
+        Serializer.prototype.pluralize = function (value) {
+            if (this.options.pluralize) {
+                return this.options.pluralize(value);
+            }
+            return value;
+        };
+
+        Serializer.prototype.underscore = function (value) {
+            if (this.options.underscore) {
+                return this.options.underscore(value);
+            }
+            return value;
+        };
+
+        Serializer.prototype.camelize = function (value) {
+            if (this.options.camelize) {
+                return this.options.camelize(value);
+            }
+            return value;
+        }
 
         return Serializer;
     }
