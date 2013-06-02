@@ -198,8 +198,6 @@
              * @return {string}
              */
             RailsResource.$url = RailsResource.resourceUrl = function (context, path) {
-                var url;
-
                 if (!angular.isObject(context)) {
                     context = {id: context};
                 }

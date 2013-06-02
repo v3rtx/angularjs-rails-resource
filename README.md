@@ -125,7 +125,7 @@ The following options are available for the config object passed to the factory 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
  * **enableRootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
- * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers--pluralize) method is used to calculate
+ * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers) method is used to calculate
         the plural name from the singular name.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
@@ -173,12 +173,12 @@ Resources created using <code>railsResourceFactory</code> have the following cla
     * **path** {string} (optional) - A path to append to the resource's URL.
     * **returns** {string} - The resource URL
 
-* query(queryParams, context) - Executes a GET request against the resource's base url.
+* query(queryParams, context) - Executes a GET request against the resource's base url (e.g. /books).
     * **query params** {object} (optional) - An map of strings or objects that are passed to $http to be turned into query parameters
     * **context** {*} (optional) - A context object that is used during url evaluation to resolve expression variables
     * **returns** {promise} - A promise that will be resolved with an array of new Resource instances
 
-* get(context) - Executs a GET request against the resource's url.
+* get(context) - Executs a GET request against the resource's url (e.g. /books/1234).
     * **context** {*} - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
     * **returns** {promise} A promise that will be resolved with a new instance of the Resource
 
@@ -193,58 +193,47 @@ Resources created using <code>railsResourceFactory</code> have the following cla
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
 * $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
-    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **customUrl** {string} - The url to DELETE to
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
+
+* beforeRequest(fn(data, resource)) - See [Transformers](#transformers) for more information.  The function is called prior to the serialization process so the data
+passed to the function is still a Resource instance as long as another transformation function has not returned a new object to serialize.
+    * fn(data, resource) {function} - The function to add as a transformer.
+        * **data** {object} - The data being serialized
+        * **resource** {Resource class} - The Resource class that is calling the function
+        * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
+
+* beforeResponse(fn(data, resource)) - See [Interceptors](#interceptors) for more information.  The function is called prior to deserialization so the data represents the
+raw data returned from the server.  Since the data has not been deserialized into a Resource instance yet, none of the [Resource instance methods](#instance-methods) are available.
+    * fn(data, resource) {function} - The function to add as an interceptor
+        * **data** {object} - The data received from the server
+        * **resource** {Resource class} - The Resource class that is calling the function
+        * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
 
 ### Instance Methods
 The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
 All of the instance methods will update the instance in-place on response and will resolve the promise with the current instance.
 
-### $url
-***
+* $url(path) - Returns this Resource instance's URL with the optional path appended if provided.
+    * **path** {string} (optional) - A path to append to the resource's URL.
 
-Returns the url for the instance.
+* create() - Submits the resource instance to the resource's base URL (e.g. /books) using a POST
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-####Parameters
+* update() - Submits the resource instance to the resource's URL (e.g. /books/1234) using a PUT
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-None
+* remove(), delete() - Executes an HTTP DELETE against the resource's URL (e.g. /books/1234)
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-### $post, $put, $patch
-***
+* $post(customUrl), $put(customUrl), $patch(customUrl) - Serializes and submits the instance using an HTTP POST/PUT/PATCH to the given URL.
+    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-Transforms the instance and submits it using POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+    * **customUrl** {string} - The url to DELETE to
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-####Parameters
- * **url** - The url to POST/PUT/PATCH/DELETE
-
-### create
-***
-
-Transforms and submits the instance using a POST to the resource base URL.
-
-####Parameters
-
-None
-
-
-### update
-***
-
-Transforms and submits the instance using a PUT to the resource's URL.
-
-####Parameters
-
-None
-
-
-### remove / delete
-***
-
-Execute a DELETE to the resource's url.
-
-####Parameters
-
-None
 
 ## Serializers
 Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
@@ -254,26 +243,33 @@ with the ability to exclude all attributes by default and only serialize ones ex
 for an attribute and even specify that an attribute is a nested resource.
 
 ### railsSerializer
-````javascript
-function railsSerializer(options, customizer)
-````
-Calling the railsSerializer function will return a new Serializer instance.  That instance can be returned as part of an AngularJS factory, or it can be passed directly to the <code>railsResourceFactory</code> <code>serializer</code> config option.
+* railsSerializer(options, customizer) - Builds a Serializer constructor function using the configuration options specified.
+    * **options** {object} (optional) - Configuration options to alter the default operation of the serializers.  This parameter can be excluded and the
+    customizer function specified as the first argument instead.
+    * **customizer** {function} (optional) - A function that will be called to customize the serialization logic.
+    * **returns** {Serializer} - A Serializer constructor function
 
 ### Configuration
 The <code>railsSerializer</code> function takes a customizer function that is called on create within the context of the constructed Serializer.  From within the customizer function you can call customization functions that affect what gets serialized and how or override the default options.
+In addition, <code>railsSerializer</code> exposes a field <code>defaultOptions</code> that allows you to globally override the defaults for the configuration options.
 
 #### Configuration Options
 Serializers have the following available configuration options:
 * underscore - (function) Allows users to supply their own custom underscore conversion logic.
-    * default: RailsInflector.underscore
+    * **default**: RailsInflector.underscore
     * parameters
-        * attribute - The current name of the attribute
-    * returns - (string) The name as it should appear in the JSON
-* camelize - (function) Allows users to supply their own custom underscore conversion logic.
-    * default: RailsInflector.camelize
+        * **attribute** {string} - The current name of the attribute
+    * **returns** {string} - The name as it should appear in the JSON
+* camelize - (function) Allows users to supply their own custom camelization logic.
+    * **default**: RailsInflector.camelize
     * parameters
-        * attribute - The name as it appeared in the JSON
-    * returns - (string) The name as it should appear in the resource
+        * **attribute** {string} - The name as it appeared in the JSON
+    * **returns** {string} - The name as it should appear in the resource
+* pluralize - (function) Allows users to supply their own custom pluralization logic.
+    * default: RailsInflector.pluralize
+    * parameters
+        * **attribute** {string} - The name as it appeared in the JSON
+    * **returns** {string} - The name as it should appear in the resource
 * excludeByDefault - (boolean) Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
     * default: false
 * exclusionMatchers - (array) An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
@@ -299,7 +295,9 @@ The customizer function passed to the railsSerializer has available to it the fo
 * serializeWith (attributeName, serializer) - Specifies a custom serializer that should be used for the attribute.  The serializer can be specified either as a <code>string</code> reference to a registered service or as a Serializer constructor returned from <code>railsSerializer</code>
 
 ### Serializer Methods
-See the inline documentation.
+The serializers are defined using mostly instance prototype methods.  For information on those methods please see the inline documentation.  There are however a couple of class methods that
+are also defined to expose underscore, camelize, and pluralize.  Those functions are set to the value specified by the configuration options sent to the serializer.
+
 
 ## Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
@@ -317,17 +315,18 @@ A transformer function must return the data.  This is to allow transformers to r
 
 The resource also exposes a class method <code>beforeRequest(fn)</code> that accepts a function to execute and automatically wraps it as a transformer and appends it
 to the list of transformers for the resource class.  The function passed to <code>beforeRequest</code> is called with the same two parameters.  One difference
-is that the functions are not required to return the data, though they still can if they need to return a new object..
+is that the functions are not required to return the data, though they still can if they need to return a new object.  See [example](EXAMPLE.md#specifying-transformer).
 
 ### Interceptors
 Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
 
-The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.
+The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.  The promise passed to each
+interceptor contains a reference to the resource to expose the configured options of the resource.  Each interceptor promise
+is expected to return the response or a $q.reject.  See [Promises](#promises) for more information about the promise data.
 
-The promise passed to each interceptor contains a reference to the resource to expose the configured options of the resource.
-
-Each interceptor promise is expected to return the response or a $q.reject.  See [Promises](#promises) below for more information about the promise data.
-
+The resource also exposes a class method <code>beforeResponse(fn)</code> that accepts a function to execute and automatically wraps it as an interceptor and appends it
+to the list of interceptors for the resource class.  Functions added with beforeResponse don't need to know anything about promises since they are automatically wrapped
+as an interceptor.
 
 
 ## Tests
