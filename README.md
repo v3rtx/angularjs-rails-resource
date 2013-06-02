@@ -270,9 +270,9 @@ Serializers have the following available configuration options:
     * parameters
         * **attribute** {string} - The name as it appeared in the JSON
     * **returns** {string} - The name as it should appear in the resource
-* excludeByDefault - (boolean) Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
+* excludeByDefault {boolean} - Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
     * default: false
-* exclusionMatchers - (array) An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
+* exclusionMatchers {array} - An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
     * string - Defines a prefix that is used to test for exclusion
     * RegExp - A custom regular expression that is tested against the attribute name
     * function - A custom function that accepts a string argument and returns a boolean with true indicating exclusion.
@@ -315,7 +315,7 @@ A transformer function must return the data.  This is to allow transformers to r
 
 The resource also exposes a class method <code>beforeRequest(fn)</code> that accepts a function to execute and automatically wraps it as a transformer and appends it
 to the list of transformers for the resource class.  The function passed to <code>beforeRequest</code> is called with the same two parameters.  One difference
-is that the functions are not required to return the data, though they still can if they need to return a new object.  See [example](EXAMPLE.md#specifying-transformer).
+is that the functions are not required to return the data, though they still can if they need to return a new object.  See [example](EXAMPLES.md#specifying-transformer).
 
 ### Interceptors
 Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
