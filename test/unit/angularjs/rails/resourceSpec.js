@@ -298,51 +298,6 @@ describe('railsResourceFactory', function () {
             expect(test).toEqualData({id: 123, abcDef: "T"});
         });
 
-        it('should be able to reference interceptor using name', inject(function($httpBackend) {
-            var promise, result, resource, testConfig = {};
-
-            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
-
-
-            angular.copy(config, testConfig);
-            testConfig.responseInterceptors = ['railsTestInterceptor'];
-            resource = factory(testConfig);
-
-            expect(promise = resource.get(123)).toBeDefined();
-
-            promise.then(function (response) {
-                result = response;
-            });
-
-            $httpBackend.flush();
-
-            expect(result).toBeInstanceOf(resource);
-            expect(result).toEqualData({interceptorAdded: 'x', id: 123, abcDef: 'xyz'});
-        }));
-
-        it('should be able to add interceptor using reference', inject(function($httpBackend) {
-            var promise, result, resource, testConfig = {};
-
-            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
-
-
-            angular.copy(config, testConfig);
-            testConfig.responseInterceptors = [testInterceptor];
-            resource = factory(testConfig);
-
-            expect(promise = resource.get(123)).toBeDefined();
-
-            promise.then(function (response) {
-                result = response;
-            });
-
-            $httpBackend.flush();
-
-            expect(result).toBeInstanceOf(resource);
-            expect(result).toEqualData({interceptorAdded: 'x', id: 123, abcDef: 'xyz'});
-        }));
-
-
         angular.forEach(['post', 'put', 'patch'], function (method) {
             it('should be able to ' + method + ' to arbitrary url', inject(function($httpBackend) {
                 var promise, result = {};

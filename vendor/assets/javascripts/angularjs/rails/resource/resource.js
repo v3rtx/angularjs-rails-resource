@@ -79,22 +79,30 @@
             RailsResource.rootName = RailsResource.serializer.underscore(config.name);
             RailsResource.rootPluralName = RailsResource.serializer.underscore(config.pluralName || RailsResource.serializer.pluralize(config.name));
 
-            // Add a function to run on response / initialize data
-            // model methods and this are not yet available at this point
+            /**
+             * Add a function to run on response and construction.
+             * These functions are run prior to deserialization but after the root unwrapping.so the response data has not been converted into a resource instance.
+             * Therefore, response data has not been converted into a resource instance which means the instance methods are not yet available on the response data.
+             *
+             * @param fn(data, resource) - data is the data received from the server, resource is the resource class calling the function
+             */
             RailsResource.beforeResponse = function(fn) {
               RailsResource.responseInterceptors.push(function(promise) {
                 return promise.then(function(response) {
-                  fn(response.data, promise.resource);
-                  return response;
+                    fn(response.data, promise.resource);
+                    return response;
                 });
               });
             };
 
-            // Add a function to run on request data
+            /**
+             * Adds a function to run prior to serializing the data to send to the server.
+             * Since these functions are called prior to serialization, the data is still a resource instance
+             * @param fn (data, resource) - data is the object to be serialized, resource is the resource class calling the function
+             */
             RailsResource.beforeRequest = function(fn) {
               RailsResource.requestTransformers.push(function(data, resource) {
-                fn(data, resource);
-                return data;
+                return fn(data, resource) || data;
               });
             };
 
