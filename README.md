@@ -113,7 +113,7 @@ You can also specify a serializer as a factory and inject it as a dependency.
 
 
 ## Resource Creation
-Creating a resource using this factory is similar to using $resource, you just call the factory with the config options and it returns a new resource function.
+Creating a resource using this factory is similar to using $resource, you just call <code>railsResourceFactory</code> with the config options and it returns a new resource function.
 The resource function serves two purposes.  First is that you can use (or define new) "class" methods directly accessible such as query and get to retrieve
 instances from the backend rails service.  The second is that it allows you to use it as a constructor to create new instances of that resource giving you access
 to create, update, and delete instance methods (or any others you add).
@@ -152,6 +152,99 @@ The URL can be specified as one of three ways:
 
         new Item({store: 123}).create() would generate a POST to /stores/123/items
         new Item({id: 1, storeId: 123}).update() would generate a PUT to /stores/123/items/1
+
+## Promises
+[$http documentation](http://docs.angularjs.org/api/ng.$http) describes the promise data very well so I highly recommend reading that.
+
+In addition to the fields listed in the $http documentation an additional field named originalData is added to the response
+object to keep track of what the field was originally pointing to.  The originalData is not a deep copy, it just ensures
+that if response.data is reassigned that there's still a pointer to the original response.data object.
+
+
+## Resource Methods
+Resources created using <code>railsResourceFactory</code> have the following class and instance methods available.
+
+### Class Methods
+* Constructor(data) - The Resource object can act as a constructor function for use with the JavaScript <code>new</code> keyword.
+    * **data** {object} (optional) - Optional data to set on the new instance
+
+* $url(context, path) - Returns the resource URL using the given context with the optional path appended if provided.
+    * **context** {*} - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
+    * **path** {string} (optional) - A path to append to the resource's URL.
+    * **returns** {string} - The resource URL
+
+* query(queryParams, context) - Executes a GET request against the resource's base url.
+    * **query params** {object} (optional) - An map of strings or objects that are passed to $http to be turned into query parameters
+    * **context** {*} (optional) - A context object that is used during url evaluation to resolve expression variables
+    * **returns** {promise} - A promise that will be resolved with an array of new Resource instances
+
+* get(context) - Executs a GET request against the resource's url.
+    * **context** {*} - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
+    * **returns** {promise} A promise that will be resolved with a new instance of the Resource
+
+* $get(customUrl, queryParams) - Executes a GET request against the given URL.
+    * **customUrl** {string} - The url to GET
+    * **queryParams** {object} (optional) - The set of query parameters to include in the GET request
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+* $post(customUrl, data), $put(customUrl, data), $patch(customUrl, data) - Serializes the data parameter using the Resource's normal serialization process and submits the result as a POST / PUT / PATCH to the given URL.
+    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **data** {object} - The data to serialize and POST / PUT / PATCH
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
+
+### Instance Methods
+The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
+All of the instance methods will update the instance in-place on response and will resolve the promise with the current instance.
+
+### $url
+***
+
+Returns the url for the instance.
+
+####Parameters
+
+None
+
+### $post, $put, $patch
+***
+
+Transforms the instance and submits it using POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+
+####Parameters
+ * **url** - The url to POST/PUT/PATCH/DELETE
+
+### create
+***
+
+Transforms and submits the instance using a POST to the resource base URL.
+
+####Parameters
+
+None
+
+
+### update
+***
+
+Transforms and submits the instance using a PUT to the resource's URL.
+
+####Parameters
+
+None
+
+
+### remove / delete
+***
+
+Execute a DELETE to the resource's url.
+
+####Parameters
+
+None
 
 ## Serializers
 Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
@@ -210,16 +303,21 @@ See the inline documentation.
 
 ## Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
-that can be resolved using Angular's DI.
+that can be resolved using Angular's DI.  The transformers / interceptors concept was prior to the [serializers](#serializers) but
+we kept the API available because there may be use cases that can be accomplished with these but not the serializers.
 
 ### Transformers
 Transformer functions are called to transform the data before we send it to $http for POST/PUT.
 
-The transformer functions will be called with the following signature:
+A transformer function is called with two parameters:
+* data - The data that is being sent to the server
+* resource - The resource class that is calling the transformer
 
-    function (data, resource)
+A transformer function must return the data.  This is to allow transformers to return entirely new objects in place of the current data (such as root wrapping).
 
-The return value of the function must be the transformed data.
+The resource also exposes a class method <code>beforeRequest(fn)</code> that accepts a function to execute and automatically wraps it as a transformer and appends it
+to the list of transformers for the resource class.  The function passed to <code>beforeRequest</code> is called with the same two parameters.  One difference
+is that the functions are not required to return the data, though they still can if they need to return a new object..
 
 ### Interceptors
 Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
@@ -230,128 +328,6 @@ The promise passed to each interceptor contains a reference to the resource to e
 
 Each interceptor promise is expected to return the response or a $q.reject.  See [Promises](#promises) below for more information about the promise data.
 
-## Promises
-[$http documentation](http://docs.angularjs.org/api/ng.$http) describes the promise data very well so I highly recommend reading that.
-
-In addition to the fields listed in the $http documentation an additional field named originalData is added to the response
-object to keep track of what the field was originally pointing to.  The originalData is not a deep copy, it just ensures
-that if response.data is reassigned that there's still a pointer to the original response.data object.
-
-
-## Resource Methods
-Resources created using this factory have the following methods available and each one (except the constructor) returns a [Promise](#promises).
-
-### $url
-***
-
-Returns the resource URL using the given context.
-
-####Parameters
-
- * **context** - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
-
-### constructor
-***
-
-The constructor is the function returned by the railsResourceFactory and can be used with the "new" keyword.
-
-####Parameters
- * **data** *(optional)* - An object containing the data to be stored in the instance.
-
-### $get
-***
-
-Executes a GET request against the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
-
-####Parameters
- * **url** - The url to GET
- * **queryParams** - The set of query parameters to include in the GET request
-
-### query
-***
-
-Executes a GET request against the resource's base url and returns a promise that will be resolved with an array of new Resource instances.
-
-####Parameters
- * **query params** - An map of strings or objects that are passed to $http to be turned into query parameters
- * **context** - A context object that is used during url evaluation to resolve expression variables
-
-
-### get
-***
-
-Executs a GET request against the resource's url and returns a promise that will be resolved with a new instance of the Resource.
-
-####Parameters
- * **context** - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
-
-
-### $post, $put, $patch
-***
-
-Transforms the given data and submits it using a POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
-
-####Parameters
- * **url** - The url to POST/PUT/PATCH
- * **data** - The data to transform and submit to the server
-
-### $delete
-***
-
-Executes a DELETE against the given URL and returns a promise that will be resolved with a new Resource instance (if the server returns a body).
-
-####Parameters
- * **url** - The url to POST/PUT/PATCH
-
-## Resource Instance Methods
-The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
-All of the instance methods will update the instance in-place on response and will resolve the promise with the current instance.
-
-### $url
-***
-
-Returns the url for the instance.
-
-####Parameters
-
-None
-
-### $post, $put, $patch
-***
-
-Transforms the instance and submits it using POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
-
-####Parameters
- * **url** - The url to POST/PUT/PATCH/DELETE
-
-### create
-***
-
-Transforms and submits the instance using a POST to the resource base URL.
-
-####Parameters
-
-None
-
-
-### update
-***
-
-Transforms and submits the instance using a PUT to the resource's URL.
-
-####Parameters
-
-None
-
-
-### remove / delete
-***
-
-Execute a DELETE to the resource's url.
-
-####Parameters
-
-None
 
 
 ## Tests
