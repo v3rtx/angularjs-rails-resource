@@ -34,6 +34,18 @@
             var transformers = config.requestTransformers,
                 interceptors = config.responseInterceptors;
 
+            function appendPath(url, path) {
+                if (path) {
+                    if (path[0] !== '/') {
+                        url += '/';
+                    }
+
+                    url += path;
+                }
+
+                return url;
+            }
+
             function RailsResource(value) {
                 if (value) {
                     var immediatePromise = function(data) {
@@ -174,14 +186,17 @@
              *
              * If the context is a number and the URL string does
              * @param context
+             * @param path {string} (optional) An additional path to append to the URL
              * @return {string}
              */
-            RailsResource.$url = RailsResource.resourceUrl = function (context) {
+            RailsResource.$url = RailsResource.resourceUrl = function (context, path) {
+                var url;
+
                 if (!angular.isObject(context)) {
                     context = {id: context};
                 }
 
-                return RailsResource.url(context || {});
+                return appendPath(RailsResource.url(context || {}), path);
             };
 
             RailsResource.$get = function (url, queryParams) {
@@ -196,8 +211,14 @@
                 return RailsResource.$get(RailsResource.resourceUrl(context), queryParams);
             };
 
-            RailsResource.prototype.$url = function() {
-                return RailsResource.resourceUrl(this);
+            /**
+             * Returns the URL for this resource.
+             *
+             * @param path {string} (optional) An additional path to append to the URL
+             * @returns {string} The URL for the resource
+             */
+            RailsResource.prototype.$url = function(path) {
+                return appendPath(RailsResource.resourceUrl(this), path);
             };
 
             RailsResource.prototype.processResponse = function (promise) {

@@ -19,11 +19,14 @@ The resource object created by this factory simplifies access to those models by
 
 This module is being used for applications we are writing and we expect that over time that we will be adding additional functionality but we welcome contributions and suggestions.
 
+## Changes
+Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
+
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'angularjs-rails-resource'
+    gem 'angularjs-rails-resource', '~> 0.2.0'
 
 Include the javascript somewhere in your asset pipeline:
 
@@ -38,23 +41,92 @@ Since this is an [AngularJS](http://angularjs.org) module it of course depends o
 * [$injector](http://docs.angularjs.org/api/AUTO.$injector)
 * [$interpolate](http://docs.angularjs.org/api/ng.$interpolate)
 
+## Usage
+There are a lot of different ways that you can use the resources and we try not to force you into any specific pattern
+
+There are more examples available in [EXAMPLES.md](EXAMPLES.md). We also published a complete working example (including the rails side)
+at [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-training-tracker) application.
+
+
+### Basic Example
+In order to create a Book resource, we would first define the factory within a module.
+
+    angular.module('book.services', ['rails']);
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        return railsResourceFactory({url: '/books', name: 'book'});
+    }]);
+
+We would then inject that service into a controller:
+
+    angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
+        $scope.searching = true;
+        // Find all books matching the title
+        $scope.books = Book.query({title: title});
+        $scope.books.then(function(results) {
+            $scope.searching = false;
+        }, function (error) {
+            $scope.searching = false;
+        });
+
+        // Find a single book and update it
+        Book.get(1234).then(function (book) {
+            book.lastViewed = new Date();
+            book.update();
+        });
+
+        // Create a book and save it
+        new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
+    }]);
+
+### Serializer
+When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option.
+
+    Author = railsResourceFactory({
+        url: '/authors',
+        name: 'author',
+        serializer: railsSerializer(function () {
+            this.exclude('birthDate', 'books');
+            this.nestedAttribute('books');
+            this.nestedResource('books', 'Book');
+        })
+    });
+
+You can also specify a serializer as a factory and inject it as a dependency.
+
+    angular.module('rails').factory('BookSerializer', function(railsSerializer) {
+        return railsSerializer(function () {
+            this.exclude('publicationDate', 'relatedBooks');
+            this.rename('ISBN', 'isbn');
+            this.nestedAttribute('chapters', 'notes');
+            this.serializeWith('chapters', 'ChapterSerializer');
+            this.add('numChapters', function (book) {
+                return book.chapters.length;
+            });
+        });
+    });
+
+    Book = railsResourceFactory({
+        url: '/books',
+        name: 'book',
+        serializer: 'BookSerializer'
+    });
+
+
 ## Resource Creation
 Creating a resource using this factory is similar to using $resource, you just call the factory with the config options and it returns a new resource function.
 The resource function serves two purposes.  First is that you can use (or define new) "class" methods directly accessible such as query and get to retrieve
 instances from the backend rails service.  The second is that it allows you to use it as a constructor to create new instances of that resource giving you access
 to create, update, and delete instance methods (or any others you add).
 
-The typical use case is to define the resource as an AngularJS factory within a module and then inject that into a controller or directive.
-See [Examples](#examples) below for more information on creating and injecting the resource.
-
 
 ### Config Options
 The following options are available for the config object passed to the factory function.
 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
+ * **enableRootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
- * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
-        if not specified the singular name with an appended 's' will be used.
+ * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers--pluralize) method is used to calculate
+        the plural name from the singular name.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
@@ -81,21 +153,69 @@ The URL can be specified as one of three ways:
         new Item({store: 123}).create() would generate a POST to /stores/123/items
         new Item({id: 1, storeId: 123}).update() would generate a PUT to /stores/123/items/1
 
+## Serializers
+Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
+However, that basic serialization often isn't ideal in every situation.  With the serializers users can define customizations
+that dictate how serialization and deserialization is performed.  Users can: rename attributes, specify extra attributes, exclude attributes
+with the ability to exclude all attributes by default and only serialize ones explicitly allowed, specify other serializers to use
+for an attribute and even specify that an attribute is a nested resource.
+
+### railsSerializer
+````javascript
+function railsSerializer(options, customizer)
+````
+Calling the railsSerializer function will return a new Serializer instance.  That instance can be returned as part of an AngularJS factory, or it can be passed directly to the <code>railsResourceFactory</code> <code>serializer</code> config option.
+
+### Configuration
+The <code>railsSerializer</code> function takes a customizer function that is called on create within the context of the constructed Serializer.  From within the customizer function you can call customization functions that affect what gets serialized and how or override the default options.
+
+#### Configuration Options
+Serializers have the following available configuration options:
+* underscore - (function) Allows users to supply their own custom underscore conversion logic.
+    * default: RailsInflector.underscore
+    * parameters
+        * attribute - The current name of the attribute
+    * returns - (string) The name as it should appear in the JSON
+* camelize - (function) Allows users to supply their own custom underscore conversion logic.
+    * default: RailsInflector.camelize
+    * parameters
+        * attribute - The name as it appeared in the JSON
+    * returns - (string) The name as it should appear in the resource
+* excludeByDefault - (boolean) Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
+    * default: false
+* exclusionMatchers - (array) An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
+    * string - Defines a prefix that is used to test for exclusion
+    * RegExp - A custom regular expression that is tested against the attribute name
+    * function - A custom function that accepts a string argument and returns a boolean with true indicating exclusion.
+
+#### Customization API
+The customizer function passed to the railsSerializer has available to it the following methods for altering the serialization of an object.  None of these methods support nested attribute names (e.g. <code>'books.publicationDate'</code>), in order to customize the serialization of the <code>books</code> objects you would need to specify a custom serializer for the <code>books</code> attribute.
+
+* exclude (attributeName...) - Accepts a variable list of attribute names to exclude from JSON serialization and deserialization.
+
+* only (attributeName...) - Accepts a variable list of attribute names that should be included in JSON serialization and deserialization.  Using this method will by default exclude all other attributes and only the ones explicitly included using <code>only</code> will be serialized.
+
+* rename (javascriptName, jsonName) - Specifies a custom name mapping for an attribute.  On serializing to JSON the <code>jsonName</code> will be used.  On deserialization, if <code>jsonName</code> is seen then it will be renamed as javascriptName in the resulting resource.  Right now it is still passed to underscore so you could do 'publicationDate' -> 'releaseDate' and it will still underscore as release_date.  However, that may be changed to prevent underscore from breaking some custom name that it doesn't handle properly.
+
+* nestedAttribute (attributeName...) - This is a shortcut for rename that allows you to specify a variable number of attributes that should all be renamed to <code><name>_attributes</code> to work with the Rails nested_attributes feature.  This does not perform any additional logic to accomodate specifying the <code>_destroy</code> property.
+
+* resource (attributeName, resource, serializer) - Specifies an attribute that is a nested resource within the parent object.  Nested resources do not imply nested attributes, if you want both you still have to specify call <code>nestedAttribute</code> as well.  A nested resource serves two purposes.  First, it defines the resource that should be used when constructing resources from the server.  Second, it specifies how the nested object should be serialized.  An optional third parameter <code>serializer</code> is available to override the serialization logic of the resource in case you need to serialize it differently in multiple contexts.
+
+* add (attributeName, value) - Allows custom attribute creation as part of the serialization to JSON.  This method may be renamed to allow for specifying different custom attributes during serialization to allow for custom attributes during deserialization as well.  The parameter <code>value</code> can be defined as function that takes a parameter of the containing object and returns a value that should be included in the JSON.
+
+* serializeWith (attributeName, serializer) - Specifies a custom serializer that should be used for the attribute.  The serializer can be specified either as a <code>string</code> reference to a registered service or as a Serializer constructor returned from <code>railsSerializer</code>
+
+### Serializer Methods
+See the inline documentation.
 
 ## Transformers / Interceptors
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
 that can be resolved using Angular's DI.
 
-The root wrapping and snake case to camel case conversions are implemented as transformers and interceptors.  So if you override
-the default transformers and interceptors you will have to include those in the array as well (assuming you want that functionality).
-
-That also means that if you don't want root wrapping and key conversions then you can just pass an emptry array for each
-and no processing will be done on the data.
-
 ### Transformers
 Transformer functions are called to transform the data before we send it to $http for POST/PUT.
 
-The transformer functions will be called with the following signature
+The transformer functions will be called with the following signature:
 
     function (data, resource)
 
@@ -233,111 +353,6 @@ Execute a DELETE to the resource's url.
 
 None
 
-
-## Example
-For a complete working example (including the rails side), check out the [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-training-tracker) application
-we open sourced based on an interface we created for use internally that uses this module as well as many others.
-
-### Define Resource
-In order to create a Book resource, we would first define the factory within a module.
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-        return railsResourceFactory({url: '/books', name: 'book'});
-    }]);
-
-We would then inject that service into a controller:
-
-    angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
-        // See following examples for using Book within your controller
-    }]);
-
-The examples below illustrate how you would then use the Book service to get, create, update, and delete data.
-
-#### Extending
-You can add additional "class" or "instance" methods by modifying the resource returned from the factory call.  For instance,
-if you wanted to add a "class" method named "findByTitle" to the Book resource you would modify the service setup as follows:
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.findByTitle = function (title) {
-            return resource.query({title: title});
-        };
-        return resource;
-    }]);
-
-If you wanted to add an "instance" method to retrieve a related object:
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Author', ['railsResourceFactory', function (railsResourceFactory) {
-        return railsResourceFactory({url: '/authors', name: 'author'});
-    }]);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', 'Author', function (railsResourceFactory, Author) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.prototype.getAuthor = function () {
-            return Author.get(this.authorId);
-        };
-    }]);
-
-Or say you instead had a nested "references" service call that returned a list of referenced books for a given book instance.  In that case you can add your own addition method that calls $http.get and then
-passes the resulting promise to the processResponse method which will perform the same transformations and handling that the get or query would use.
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', '$http', function (railsResourceFactory, $http) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.prototype.getReferences = function () {
-            var self = this;
-            return resource.processResponse($http.get(resource.resourceUrl(this.id) + '/references')).then(function (references) {
-                self.references = references;
-                return self.references;
-            });
-        };
-    }]);
-
-### Query Books
-To query for a list of books with the title "The Hobbit" you would use the query method:
-
-    var books = Book.query({title: 'The Hobbit'});
-
-We now have a promise in the books variable which we could then use within a template if we just wanted to do an ng-repeat over the books.  A lot of times though you'll probably want to show some indicator
-to your user that the search is executing so you'd want to use a then handler:
-
-    $scope.searching = true;
-    var books = Book.query({title: 'The Hobbit'});
-    books.then(function(results) {
-        $scope.searching = false;
-    }, function (error) {
-        $scope.searching = false;
-        // display error
-    });
-
-
-### Get Book
-    var book = Book.get(1234);
-
-Again, it's important to remember that book is a promise, if instead you wanted the book data you would use the "then" function:
-
-    Book.get(1234).then(function (book) {
-       // book contains the data returned from the service
-    });
-
-### Create Book
-    var book = new Book({author: 'J. R. R. Tolkein', title: 'The Hobbit'});
-    book.create().then(function (result) {
-        // creation was successful
-    });
-
-### Update Book
-    Book.get(1234).then(function (book) {
-        book.author = 'J. R. R. Tolkein';
-        book.update();
-    });
-
-Or, if you say the user typed in the book id into a scope variable and you wanted to update the book without having to first retrieve it:
-
-    var book = new Book({id: $scope.bookId, author: $scope.authorName, title: $scope.bookTitle});
-    book.update();
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).
