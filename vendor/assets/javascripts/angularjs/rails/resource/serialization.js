@@ -290,6 +290,9 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
                     result.push(self.serializeValue(value));
                 });
             } else if (angular.isObject(data)) {
+                if (angular.isDate(data)) {
+                    return data;
+                }
                 result = {};
 
                 angular.forEach(data, function (value, key) {
