@@ -272,6 +272,18 @@
                 return this.$put(this.$url(), this);
             };
 
+            RailsResource.prototype.isNew = function () {
+                return this.id == null;
+            }
+
+            RailsResource.prototype.save = function () {
+                if (this.isNew()) {
+                    this.create();
+                } else {
+                    this.update();
+                }
+            }
+
             RailsResource['$delete'] = function (url) {
                 return RailsResource.processResponse($http['delete'](url, RailsResource.getHttpConfig()));
             };
