@@ -83,9 +83,9 @@ describe('transformers', function () {
 
         Resource = factory(config);
 
-        Resource.beforeResponse(function (data, resource) {
-            expect(data).toEqualData({id: 123, abc_def: 'xyz'});
-            expect(resource).toEqual(Resource);
+        Resource.beforeResponse(function (resource, constructor) {
+            expect(resource).toEqualData({id: 123, abcDef: 'xyz'});
+            expect(constructor).toEqual(Resource);
             interceptorCalled = true;
         });
 

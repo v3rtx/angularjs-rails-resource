@@ -80,13 +80,11 @@
             RailsResource.rootPluralName = RailsResource.serializer.underscore(config.pluralName || RailsResource.serializer.pluralize(config.name));
 
             /**
-             * Add a function to run on response and construction.
-             * These functions are run prior to deserialization but after the root unwrapping.so the response data has not been converted into a resource instance.
-             * Therefore, response data has not been converted into a resource instance which means the instance methods are not yet available on the response data.
-             *
-             * @param fn(data, resource) - data is the data received from the server, resource is the resource class calling the function
+             * Add a callback to run on response and construction.
+             * @param fn(resource, constructor) - resource is a resource instance, and constructor is the resource class calling the function
              */
             RailsResource.beforeResponse = function(fn) {
+              var fn = RailsResourceInjector.getDependency(fn);
               RailsResource.responseInterceptors.push(function(promise) {
                 return promise.then(function(response) {
                     fn(response.data, promise.resource);
@@ -96,11 +94,11 @@
             };
 
             /**
-             * Adds a function to run prior to serializing the data to send to the server.
-             * Since these functions are called prior to serialization, the data is still a resource instance
-             * @param fn (data, resource) - data is the object to be serialized, resource is the resource class calling the function
+             * Adds a function to run after serializing the data to send to the server, but before root-wrapping it.
+             * @param fn (data, constructor) - data object is the serialized resource instance, and constructor the resource class calling the function
              */
             RailsResource.beforeRequest = function(fn) {
+              var fn = RailsResourceInjector.getDependency(fn);
               RailsResource.requestTransformers.push(function(data, resource) {
                 return fn(data, resource) || data;
               });
@@ -115,12 +113,15 @@
                 RailsResource.requestTransformers.push(RailsResourceInjector.getDependency(transformer));
             });
 
+            // transform data for request:
             RailsResource.transformData = function (data) {
+                data = RailsResource.serializer.serialize(data);
+
+                // data is now serialized. call request transformers including beforeRequest
                 angular.forEach(RailsResource.requestTransformers, function (transformer) {
                     data = transformer(data, RailsResource);
                 });
 
-                data = RailsResource.serializer.serialize(data);
 
                 if (RailsResource.enableRootWrapping) {
                     data = railsRootWrappingTransformer(data, RailsResource);
@@ -129,6 +130,7 @@
                 return data;
             };
 
+            // transform data on response:
             RailsResource.callInterceptors = function (promise) {
                 promise = promise.then(function (response) {
                     // store off the data in case something (like our root unwrapping) assigns data as a new object
@@ -141,15 +143,18 @@
                     promise = railsRootWrappingInterceptor(promise);
                 }
 
+                promise.then(function (response) {
+                    response.data = RailsResource.serializer.deserialize(response.data, RailsResource);
+                    return response;
+                });
+
+                // data is now deserialized. call response interceptors including beforeResponse
                 angular.forEach(RailsResource.responseInterceptors, function (interceptor) {
                     promise.resource = RailsResource;
                     promise = interceptor(promise);
                 });
 
-                return promise.then(function (response) {
-                    response.data = RailsResource.serializer.deserialize(response.data, RailsResource);
-                    return response;
-                });
+                return promise;
             };
 
             RailsResource.processResponse = function (promise) {

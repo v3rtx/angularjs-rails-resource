@@ -22,6 +22,7 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
             this.serializeMappings = {};
             this.deserializeMappings = {};
             this.customSerializedAttributes = {};
+            this.preservedAttributes = {};
             this.customSerializers = {};
             this.nestedResources = {};
             this.options = angular.extend({}, defaultOptions, options || {});
@@ -134,6 +135,18 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
          */
         Serializer.prototype.add = function (attributeName, value) {
             this.customSerializedAttributes[attributeName] = value;
+            return this;
+        };
+
+
+        /**
+         * Allows the attribute to be preserved unmodified in the resulting object.
+         *
+         * @param attributeName {string} The name of the attribute to add
+         * @returns {Serializer} this for chaining support
+         */
+        Serializer.prototype.preserve = function(attributeName) {
+            this.preservedAttributes[attributeName] =  true;
             return this;
         };
 
@@ -277,6 +290,9 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
                     result.push(self.serializeValue(value));
                 });
             } else if (angular.isObject(data)) {
+                if (angular.isDate(data)) {
+                    return data;
+                }
                 result = {};
 
                 angular.forEach(data, function (value, key) {
@@ -389,7 +405,13 @@ angular.module('rails').factory('railsSerializer', ['$injector', 'RailsInflector
 
             serializer = this.getAttributeSerializer(attributeName);
             NestedResource = this.getNestedResource(attributeName);
-            data[attributeName] = serializer ? serializer.deserialize(value, NestedResource) : this.deserializeValue(value, NestedResource);
+
+            // preserved attributes are assigned unmodified
+            if (this.preservedAttributes[attributeName]) {
+                data[attributeName] = value;
+            } else {
+                data[attributeName] = serializer ? serializer.deserialize(value, NestedResource) : this.deserializeValue(value, NestedResource);
+            }
         };
 
         /**

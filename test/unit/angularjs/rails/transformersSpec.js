@@ -11,7 +11,7 @@ describe('transformers', function () {
 
         angular.module('rails').factory('railsTestTransformer', function () {
             return function (data, resource) {
-                data.transformerCalled = true;
+                data.transformer_called = true;
                 return data;
             }
         });
@@ -63,9 +63,9 @@ describe('transformers', function () {
         $httpBackend.expectPOST('/test/123', {test: {id: 123}}).respond(200, {id: 123, abc_def: 'xyz'});
 
         Resource = factory(config);
-        Resource.beforeRequest(function (data, resource) {
+        Resource.beforeRequest(function (data, constructor) {
             expect(data).toEqualData({id: 123});
-            expect(resource).toEqual(Resource);
+            expect(constructor).toEqual(Resource);
             transformerCalled = true;
         });
 
