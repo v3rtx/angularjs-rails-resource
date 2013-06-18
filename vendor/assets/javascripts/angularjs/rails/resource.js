@@ -333,9 +333,9 @@
 
             RailsResource.prototype.save = function () {
                 if (this.isNew()) {
-                    this.create();
+                    return this.create();
                 } else {
-                    this.update();
+                    return this.update();
                 }
             }
 
