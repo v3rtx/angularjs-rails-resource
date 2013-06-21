@@ -164,7 +164,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize({xid: 1, firstNamex: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({first_namex: 'George', middle_name: 'R. R.', last_name: 'Martin', $birth_date: '1948-09-20'});
             result = serializer.deserialize({xid: 1, first_namex: 'George', middle_name: 'R. R.', last_name: 'Martin', $birth_date: '1948-09-20'});
-            expect(result).toEqualData({firstNamex: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
+            expect(result).toEqualData({xid: 1, firstNamex: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
         });
 
         it('should use combination of string prefix, function, and regexp for exclusions', function () {
@@ -176,7 +176,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize({xid: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birthDate: '1948-09-20'});
             expect(result).toEqualData({first_name: 'George', last_name: 'Martin'});
             result = serializer.deserialize({xid: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin', $birth_date: '1948-09-20'});
-            expect(result).toEqualData({firstName: 'George', lastName: 'Martin'});
+            expect(result).toEqualData({xid: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', $birth_date: '1948-09-20'});
         });
     });
 
@@ -213,7 +213,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize(camelizedAuthor);
             expect(result).toEqualData({id: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin', birth_date: '1948-09-20'});
             result = serializer.deserialize(underscoredAuthor);
-            expect(result).toEqualData({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin', birthDate: '1948-09-20'});
+            expect(result).toEqualData(camelizedAuthor);
         });
 
         it('should allow variable exclusions', function () {
@@ -225,7 +225,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize(camelizedAuthor);
             expect(result).toEqualData({id: 1, first_name: 'George', middle_name: 'R. R.', last_name: 'Martin'});
             result = serializer.deserialize(underscoredAuthor);
-            expect(result).toEqualData({id: 1, firstName: 'George', middleName: 'R. R.', lastName: 'Martin'});
+            expect(result).toEqualData(camelizedAuthor);
         });
 
         it('should allow renaming attributes', function () {
@@ -315,7 +315,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
             expect(result).toEqualData({id: 1});
             result = serializer.deserialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
-            expect(result).toEqualData({id: 1});
+            expect(result).toEqualData({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
         });
 
         it('should only serialize id and last', function () {
@@ -327,7 +327,7 @@ describe('railsUrlSerializer', function () {
             result = serializer.serialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
             expect(result).toEqualData({id: 1, last: 'Martin'});
             result = serializer.deserialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
-            expect(result).toEqualData({id: 1, last: 'Martin'});
+            expect(result).toEqualData({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
         });
     });
 });
