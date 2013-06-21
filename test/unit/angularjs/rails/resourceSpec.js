@@ -175,6 +175,15 @@ describe('railsResourceFactory', function () {
             expect(data).toEqualData({id: 123, abcDef: 'xyz'});
         }));
 
+        it("should return a promise when calling save", inject(function($httpBackend) {
+            var promise, data;
+
+            data = new Test({abc_def: 'xyz'});
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
+            expect(promise = data.save()).toBeDefined();
+            $httpBackend.flush()
+        }));
+
         it('should be able to create new instance and save it using save', inject(function($httpBackend) {
             var data = new Test({abcDef: 'xyz'});
 
