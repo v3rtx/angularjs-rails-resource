@@ -292,7 +292,7 @@ The customizer function passed to the railsSerializer has available to it the fo
 
 * resource (attributeName, resource, serializer) - Specifies an attribute that is a nested resource within the parent object.  Nested resources do not imply nested attributes, if you want both you still have to specify call <code>nestedAttribute</code> as well.  A nested resource serves two purposes.  First, it defines the resource that should be used when constructing resources from the server.  Second, it specifies how the nested object should be serialized.  An optional third parameter <code>serializer</code> is available to override the serialization logic of the resource in case you need to serialize it differently in multiple contexts.
 
-* add (attributeName, value) - Allows custom attribute creation as part of the serialization to JSON.  This method may be renamed to allow for specifying different custom attributes during serialization to allow for custom attributes during deserialization as well.  The parameter <code>value</code> can be defined as function that takes a parameter of the containing object and returns a value that should be included in the JSON.
+* add (attributeName, value) - Allows custom attribute creation as part of the serialization to JSON.  The parameter <code>value</code> can be defined as function that takes a parameter of the containing object and returns a value that should be included in the JSON.
 
 * serializeWith (attributeName, serializer) - Specifies a custom serializer that should be used for the attribute.  The serializer can be specified either as a <code>string</code> reference to a registered service or as a Serializer constructor returned from <code>railsSerializer</code>
 
