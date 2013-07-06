@@ -13,12 +13,12 @@ a resource instance for the book.
         return railsResourceFactory({url: '/books', name: 'book'});
     }]);
 
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+    angular.module('book.services').factory('Author', ['railsResourceFactory', function (railsResourceFactory) {
         return railsResourceFactory({
             url: '/authors',
             name: 'author',
             serializer: railsSerializer(function () {
-                this.nestedResource('books', 'Book');
+                this.resource('books', 'Book');
             });
          });
     }]);
@@ -30,6 +30,50 @@ a resource instance for the book.
         $scope.updateBook = function (book) {
             book.update();
         }
+    }]);
+
+# Nested attributes
+While we don't have logic for full nested attributes support, the new serializer does allow you to specify which fields
+should be passed with the <code>_attributes</code> suffix.
+
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        return railsResourceFactory({
+            url: '/books',
+            name: 'book',
+            serializer: railsSerializer(function () {
+                this.nestedAttribute('author');
+            });
+         });
+    }]);
+
+# Excluding attributes from serialization
+Sometimes you don't want to serialize certain fields when updating an object.  Take for instance the case of the author on a book.
+We know that we don't accept nested attributes for the author on the server so we want to exclude it from the JSON to reduce
+the amount of data being sent to the server.
+
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        return railsResourceFactory({
+            url: '/books',
+            name: 'book',
+            serializer: railsSerializer(function () {
+                this.exclude('author');
+            });
+         });
+    }]);
+
+
+# Only allowing specific attributes for serialization
+You can also be very restrictive and only include specific attributes that you want to send to the server.  All other attribtues
+would be excluded by default.
+
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        return railsResourceFactory({
+            url: '/books',
+            name: 'book',
+            serializer: railsSerializer(function () {
+                this.only('id', 'isbn', 'publicationDate');
+            });
+         });
     }]);
 
 
@@ -97,7 +141,7 @@ passes the resulting promise to the processResponse method which will perform th
     }]);
 
 # Specifying Transformer
-Transformers can be by specifying an array of transformers in the configuration options passed to railsResourceFactory.
+Transformers can be specified by an array of transformers in the configuration options passed to railsResourceFactory.
 However, a cleaner eway to write it is to use the <code>beforeRequest</code> which can take a new anonymous function or
 a function returned by a factory if you want to share a transformer across multiple resources.
 
