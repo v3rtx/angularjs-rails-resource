@@ -19,11 +19,14 @@ The resource object created by this factory simplifies access to those models by
 
 This module is being used for applications we are writing and we expect that over time that we will be adding additional functionality but we welcome contributions and suggestions.
 
+## Changes
+Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
+
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'angularjs-rails-resource'
+    gem 'angularjs-rails-resource', '~> 0.2.0'
 
 Include the javascript somewhere in your asset pipeline:
 
@@ -38,23 +41,92 @@ Since this is an [AngularJS](http://angularjs.org) module it of course depends o
 * [$injector](http://docs.angularjs.org/api/AUTO.$injector)
 * [$interpolate](http://docs.angularjs.org/api/ng.$interpolate)
 
+## Usage
+There are a lot of different ways that you can use the resources and we try not to force you into any specific pattern
+
+There are more examples available in [EXAMPLES.md](EXAMPLES.md). We also published a complete working example (including the rails side)
+at [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-training-tracker) application.
+
+
+### Basic Example
+In order to create a Book resource, we would first define the factory within a module.
+
+    angular.module('book.services', ['rails']);
+    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+        return railsResourceFactory({url: '/books', name: 'book'});
+    }]);
+
+We would then inject that service into a controller:
+
+    angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
+        $scope.searching = true;
+        // Find all books matching the title
+        $scope.books = Book.query({title: title});
+        $scope.books.then(function(results) {
+            $scope.searching = false;
+        }, function (error) {
+            $scope.searching = false;
+        });
+
+        // Find a single book and update it
+        Book.get(1234).then(function (book) {
+            book.lastViewed = new Date();
+            book.update();
+        });
+
+        // Create a book and save it
+        new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
+    }]);
+
+### Serializer
+When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option.
+
+    Author = railsResourceFactory({
+        url: '/authors',
+        name: 'author',
+        serializer: railsSerializer(function () {
+            this.exclude('birthDate', 'books');
+            this.nestedAttribute('books');
+            this.nestedResource('books', 'Book');
+        })
+    });
+
+You can also specify a serializer as a factory and inject it as a dependency.
+
+    angular.module('rails').factory('BookSerializer', function(railsSerializer) {
+        return railsSerializer(function () {
+            this.exclude('publicationDate', 'relatedBooks');
+            this.rename('ISBN', 'isbn');
+            this.nestedAttribute('chapters', 'notes');
+            this.serializeWith('chapters', 'ChapterSerializer');
+            this.add('numChapters', function (book) {
+                return book.chapters.length;
+            });
+        });
+    });
+
+    Book = railsResourceFactory({
+        url: '/books',
+        name: 'book',
+        serializer: 'BookSerializer'
+    });
+
+
 ## Resource Creation
-Creating a resource using this factory is similar to using $resource, you just call the factory with the config options and it returns a new resource function.
+Creating a resource using this factory is similar to using $resource, you just call <code>railsResourceFactory</code> with the config options and it returns a new resource function.
 The resource function serves two purposes.  First is that you can use (or define new) "class" methods directly accessible such as query and get to retrieve
 instances from the backend rails service.  The second is that it allows you to use it as a constructor to create new instances of that resource giving you access
 to create, update, and delete instance methods (or any others you add).
-
-The typical use case is to define the resource as an AngularJS factory within a module and then inject that into a controller or directive.
-See [Examples](#examples) below for more information on creating and injecting the resource.
 
 
 ### Config Options
 The following options are available for the config object passed to the factory function.
 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
+ * **enableRootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
- * **pluralName** *(optional)* - If specified this name will be used for unwrapping query results,
-        if not specified the singular name with an appended 's' will be used.
+ * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers) method is used to calculate
+        the plural name from the singular name.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
@@ -81,35 +153,6 @@ The URL can be specified as one of three ways:
         new Item({store: 123}).create() would generate a POST to /stores/123/items
         new Item({id: 1, storeId: 123}).update() would generate a PUT to /stores/123/items/1
 
-
-## Transformers / Interceptors
-The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
-that can be resolved using Angular's DI.
-
-The root wrapping and snake case to camel case conversions are implemented as transformers and interceptors.  So if you override
-the default transformers and interceptors you will have to include those in the array as well (assuming you want that functionality).
-
-That also means that if you don't want root wrapping and key conversions then you can just pass an emptry array for each
-and no processing will be done on the data.
-
-### Transformers
-Transformer functions are called to transform the data before we send it to $http for POST/PUT.
-
-The transformer functions will be called with the following signature
-
-    function (data, resource)
-
-The return value of the function must be the transformed data.
-
-### Interceptors
-Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
-
-The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.
-
-The promise passed to each interceptor contains a reference to the resource to expose the configured options of the resource.
-
-Each interceptor promise is expected to return the response or a $q.reject.  See [Promises](#promises) below for more information about the promise data.
-
 ## Promises
 [$http documentation](http://docs.angularjs.org/api/ng.$http) describes the promise data very well so I highly recommend reading that.
 
@@ -119,225 +162,174 @@ that if response.data is reassigned that there's still a pointer to the original
 
 
 ## Resource Methods
-Resources created using this factory have the following methods available and each one (except the constructor) returns a [Promise](#promises).
+Resources created using <code>railsResourceFactory</code> have the following class and instance methods available.
 
-### $url
-***
+### Class Methods
+* Constructor(data) - The Resource object can act as a constructor function for use with the JavaScript <code>new</code> keyword.
+    * **data** {object} (optional) - Optional data to set on the new instance
 
-Returns the resource URL using the given context.
+* $url(context, path) - Returns the resource URL using the given context with the optional path appended if provided.
+    * **context** {*} - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
+    * **path** {string} (optional) - A path to append to the resource's URL.
+    * **returns** {string} - The resource URL
 
-####Parameters
+* query(queryParams, context) - Executes a GET request against the resource's base url (e.g. /books).
+    * **query params** {object} (optional) - An map of strings or objects that are passed to $http to be turned into query parameters
+    * **context** {*} (optional) - A context object that is used during url evaluation to resolve expression variables
+    * **returns** {promise} - A promise that will be resolved with an array of new Resource instances
 
- * **context** - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
+* get(context) - Executs a GET request against the resource's url (e.g. /books/1234).
+    * **context** {*} - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
+    * **returns** {promise} A promise that will be resolved with a new instance of the Resource
 
-### constructor
-***
+* $get(customUrl, queryParams) - Executes a GET request against the given URL.
+    * **customUrl** {string} - The url to GET
+    * **queryParams** {object} (optional) - The set of query parameters to include in the GET request
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
-The constructor is the function returned by the railsResourceFactory and can be used with the "new" keyword.
+* $post(customUrl, data), $put(customUrl, data), $patch(customUrl, data) - Serializes the data parameter using the Resource's normal serialization process and submits the result as a POST / PUT / PATCH to the given URL.
+    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **data** {object} - The data to serialize and POST / PUT / PATCH
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
-####Parameters
- * **data** *(optional)* - An object containing the data to be stored in the instance.
+* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+    * **customUrl** {string} - The url to DELETE to
+    * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
 
-### $get
-***
+* beforeRequest(fn(data, resource)) - See [Transformers](#transformers) for more information.  The function is called prior to the serialization process so the data
+passed to the function is still a Resource instance as long as another transformation function has not returned a new object to serialize.
+    * fn(data, resource) {function} - The function to add as a transformer.
+        * **data** {object} - The data being serialized
+        * **resource** {Resource class} - The Resource class that is calling the function
+        * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
 
-Executes a GET request against the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+* beforeResponse(fn(data, resource)) - See [Interceptors](#interceptors) for more information.  The function is called prior to deserialization so the data represents the
+raw data returned from the server.  Since the data has not been deserialized into a Resource instance yet, none of the [Resource instance methods](#instance-methods) are available.
+    * fn(data, resource) {function} - The function to add as an interceptor
+        * **data** {object} - The data received from the server
+        * **resource** {Resource class} - The Resource class that is calling the function
+        * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
 
-####Parameters
- * **url** - The url to GET
- * **queryParams** - The set of query parameters to include in the GET request
-
-### query
-***
-
-Executes a GET request against the resource's base url and returns a promise that will be resolved with an array of new Resource instances.
-
-####Parameters
- * **query params** - An map of strings or objects that are passed to $http to be turned into query parameters
- * **context** - A context object that is used during url evaluation to resolve expression variables
-
-
-### get
-***
-
-Executs a GET request against the resource's url and returns a promise that will be resolved with a new instance of the Resource.
-
-####Parameters
- * **context** - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
-
-
-### $post, $put, $patch
-***
-
-Transforms the given data and submits it using a POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
-
-####Parameters
- * **url** - The url to POST/PUT/PATCH
- * **data** - The data to transform and submit to the server
-
-### $delete
-***
-
-Executes a DELETE against the given URL and returns a promise that will be resolved with a new Resource instance (if the server returns a body).
-
-####Parameters
- * **url** - The url to POST/PUT/PATCH
-
-## Resource Instance Methods
+### Instance Methods
 The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
 All of the instance methods will update the instance in-place on response and will resolve the promise with the current instance.
 
-### $url
-***
+* $url(path) - Returns this Resource instance's URL with the optional path appended if provided.
+    * **path** {string} (optional) - A path to append to the resource's URL.
 
-Returns the url for the instance.
+* create() - Submits the resource instance to the resource's base URL (e.g. /books) using a POST
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-####Parameters
+* update() - Submits the resource instance to the resource's URL (e.g. /books/1234) using a PUT
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-None
+* save() - Calls <code>create</code> if <code>isNew</code> returns true, otherwise it calls <code>update</code>.
 
-### $post, $put, $patch
-***
+* remove(), delete() - Executes an HTTP DELETE against the resource's URL (e.g. /books/1234)
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-Transforms the instance and submits it using POST/PUT/PATCH to the given URL and returns a promise that will be resolved with a new Resource instance (or instances in the case of an array response).
+* $post(customUrl), $put(customUrl), $patch(customUrl) - Serializes and submits the instance using an HTTP POST/PUT/PATCH to the given URL.
+    * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
-####Parameters
- * **url** - The url to POST/PUT/PATCH/DELETE
-
-### create
-***
-
-Transforms and submits the instance using a POST to the resource base URL.
-
-####Parameters
-
-None
+* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+    * **customUrl** {string} - The url to DELETE to
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
 
-### update
-***
+## Serializers
+Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
+However, that basic serialization often isn't ideal in every situation.  With the serializers users can define customizations
+that dictate how serialization and deserialization is performed.  Users can: rename attributes, specify extra attributes, exclude attributes
+with the ability to exclude all attributes by default and only serialize ones explicitly allowed, specify other serializers to use
+for an attribute and even specify that an attribute is a nested resource.
 
-Transforms and submits the instance using a PUT to the resource's URL.
+### railsSerializer
+* railsSerializer(options, customizer) - Builds a Serializer constructor function using the configuration options specified.
+    * **options** {object} (optional) - Configuration options to alter the default operation of the serializers.  This parameter can be excluded and the
+    customizer function specified as the first argument instead.
+    * **customizer** {function} (optional) - A function that will be called to customize the serialization logic.
+    * **returns** {Serializer} - A Serializer constructor function
 
-####Parameters
+### Configuration
+The <code>railsSerializer</code> function takes a customizer function that is called on create within the context of the constructed Serializer.  From within the customizer function you can call customization functions that affect what gets serialized and how or override the default options.
+In addition, <code>railsSerializer</code> exposes a field <code>defaultOptions</code> that allows you to globally override the defaults for the configuration options.
 
-None
+#### Configuration Options
+Serializers have the following available configuration options:
+* underscore - (function) Allows users to supply their own custom underscore conversion logic.
+    * **default**: RailsInflector.underscore
+    * parameters
+        * **attribute** {string} - The current name of the attribute
+    * **returns** {string} - The name as it should appear in the JSON
+* camelize - (function) Allows users to supply their own custom camelization logic.
+    * **default**: RailsInflector.camelize
+    * parameters
+        * **attribute** {string} - The name as it appeared in the JSON
+    * **returns** {string} - The name as it should appear in the resource
+* pluralize - (function) Allows users to supply their own custom pluralization logic.
+    * default: RailsInflector.pluralize
+    * parameters
+        * **attribute** {string} - The name as it appeared in the JSON
+    * **returns** {string} - The name as it should appear in the resource
+* excludeByDefault {boolean} - Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
+    * default: false
+* exclusionMatchers {array} - An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
+    * string - Defines a prefix that is used to test for exclusion
+    * RegExp - A custom regular expression that is tested against the attribute name
+    * function - A custom function that accepts a string argument and returns a boolean with true indicating exclusion.
 
+#### Customization API
+The customizer function passed to the railsSerializer has available to it the following methods for altering the serialization of an object.  None of these methods support nested attribute names (e.g. <code>'books.publicationDate'</code>), in order to customize the serialization of the <code>books</code> objects you would need to specify a custom serializer for the <code>books</code> attribute.
 
-### remove / delete
-***
+* exclude (attributeName...) - Accepts a variable list of attribute names to exclude from JSON serialization.  This has no impact on what is deserialized from the server.
 
-Execute a DELETE to the resource's url.
+* only (attributeName...) - Accepts a variable list of attribute names that should be included in JSON serialization.  This has no impact on what is deserialized from the server.  Using this method will by default exclude all other attributes and only the ones explicitly included using <code>only</code> will be serialized.
 
-####Parameters
+* rename (javascriptName, jsonName) - Specifies a custom name mapping for an attribute.  On serializing to JSON the <code>jsonName</code> will be used.  On deserialization, if <code>jsonName</code> is seen then it will be renamed as javascriptName in the resulting resource.  Right now it is still passed to underscore so you could do 'publicationDate' -> 'releaseDate' and it will still underscore as release_date.  However, that may be changed to prevent underscore from breaking some custom name that it doesn't handle properly.
 
-None
+* nestedAttribute (attributeName...) - This is a shortcut for rename that allows you to specify a variable number of attributes that should all be renamed to <code><name>_attributes</code> to work with the Rails nested_attributes feature.  This does not perform any additional logic to accomodate specifying the <code>_destroy</code> property.
 
+* resource (attributeName, resource, serializer) - Specifies an attribute that is a nested resource within the parent object.  Nested resources do not imply nested attributes, if you want both you still have to specify call <code>nestedAttribute</code> as well.  A nested resource serves two purposes.  First, it defines the resource that should be used when constructing resources from the server.  Second, it specifies how the nested object should be serialized.  An optional third parameter <code>serializer</code> is available to override the serialization logic of the resource in case you need to serialize it differently in multiple contexts.
 
-## Example
-For a complete working example (including the rails side), check out the [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-training-tracker) application
-we open sourced based on an interface we created for use internally that uses this module as well as many others.
+* add (attributeName, value) - Allows custom attribute creation as part of the serialization to JSON.  This method may be renamed to allow for specifying different custom attributes during serialization to allow for custom attributes during deserialization as well.  The parameter <code>value</code> can be defined as function that takes a parameter of the containing object and returns a value that should be included in the JSON.
 
-### Define Resource
-In order to create a Book resource, we would first define the factory within a module.
+* serializeWith (attributeName, serializer) - Specifies a custom serializer that should be used for the attribute.  The serializer can be specified either as a <code>string</code> reference to a registered service or as a Serializer constructor returned from <code>railsSerializer</code>
 
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-        return railsResourceFactory({url: '/books', name: 'book'});
-    }]);
-
-We would then inject that service into a controller:
-
-    angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
-        // See following examples for using Book within your controller
-    }]);
-
-The examples below illustrate how you would then use the Book service to get, create, update, and delete data.
-
-#### Extending
-You can add additional "class" or "instance" methods by modifying the resource returned from the factory call.  For instance,
-if you wanted to add a "class" method named "findByTitle" to the Book resource you would modify the service setup as follows:
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.findByTitle = function (title) {
-            return resource.query({title: title});
-        };
-        return resource;
-    }]);
-
-If you wanted to add an "instance" method to retrieve a related object:
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Author', ['railsResourceFactory', function (railsResourceFactory) {
-        return railsResourceFactory({url: '/authors', name: 'author'});
-    }]);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', 'Author', function (railsResourceFactory, Author) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.prototype.getAuthor = function () {
-            return Author.get(this.authorId);
-        };
-    }]);
-
-Or say you instead had a nested "references" service call that returned a list of referenced books for a given book instance.  In that case you can add your own addition method that calls $http.get and then
-passes the resulting promise to the processResponse method which will perform the same transformations and handling that the get or query would use.
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', '$http', function (railsResourceFactory, $http) {
-        var resource = railsResourceFactory({url: '/books', name: 'book'});
-        resource.prototype.getReferences = function () {
-            var self = this;
-            return resource.processResponse($http.get(resource.resourceUrl(this.id) + '/references')).then(function (references) {
-                self.references = references;
-                return self.references;
-            });
-        };
-    }]);
-
-### Query Books
-To query for a list of books with the title "The Hobbit" you would use the query method:
-
-    var books = Book.query({title: 'The Hobbit'});
-
-We now have a promise in the books variable which we could then use within a template if we just wanted to do an ng-repeat over the books.  A lot of times though you'll probably want to show some indicator
-to your user that the search is executing so you'd want to use a then handler:
-
-    $scope.searching = true;
-    var books = Book.query({title: 'The Hobbit'});
-    books.then(function(results) {
-        $scope.searching = false;
-    }, function (error) {
-        $scope.searching = false;
-        // display error
-    });
+### Serializer Methods
+The serializers are defined using mostly instance prototype methods.  For information on those methods please see the inline documentation.  There are however a couple of class methods that
+are also defined to expose underscore, camelize, and pluralize.  Those functions are set to the value specified by the configuration options sent to the serializer.
 
 
-### Get Book
-    var book = Book.get(1234);
+## Transformers / Interceptors
+The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
+that can be resolved using Angular's DI.  The transformers / interceptors concept was prior to the [serializers](#serializers) but
+we kept the API available because there may be use cases that can be accomplished with these but not the serializers.
 
-Again, it's important to remember that book is a promise, if instead you wanted the book data you would use the "then" function:
+### Transformers
+Transformer functions are called to transform the data before we send it to $http for POST/PUT.
 
-    Book.get(1234).then(function (book) {
-       // book contains the data returned from the service
-    });
+A transformer function is called with two parameters:
+* data - The data that is being sent to the server
+* resource - The resource class that is calling the transformer
 
-### Create Book
-    var book = new Book({author: 'J. R. R. Tolkein', title: 'The Hobbit'});
-    book.create().then(function (result) {
-        // creation was successful
-    });
+A transformer function must return the data.  This is to allow transformers to return entirely new objects in place of the current data (such as root wrapping).
 
-### Update Book
-    Book.get(1234).then(function (book) {
-        book.author = 'J. R. R. Tolkein';
-        book.update();
-    });
+The resource also exposes a class method <code>beforeRequest(fn)</code> that accepts a function to execute and automatically wraps it as a transformer and appends it
+to the list of transformers for the resource class.  The function passed to <code>beforeRequest</code> is called with the same two parameters.  One difference
+is that the functions are not required to return the data, though they still can if they need to return a new object.  See [example](EXAMPLES.md#specifying-transformer).
 
-Or, if you say the user typed in the book id into a scope variable and you wanted to update the book without having to first retrieve it:
+### Interceptors
+Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
 
-    var book = new Book({id: $scope.bookId, author: $scope.authorName, title: $scope.bookTitle});
-    book.update();
+The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.  The promise passed to each
+interceptor contains a reference to the resource to expose the configured options of the resource.  Each interceptor promise
+is expected to return the response or a $q.reject.  See [Promises](#promises) for more information about the promise data.
+
+The resource also exposes a class method <code>beforeResponse(fn)</code> that accepts a function to execute and automatically wraps it as an interceptor and appends it
+to the list of interceptors for the resource class.  Functions added with beforeResponse don't need to know anything about promises since they are automatically wrapped
+as an interceptor.
+
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).

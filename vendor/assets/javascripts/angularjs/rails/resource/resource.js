@@ -1,61 +1,4 @@
 (function (undefined) {
-    angular.module('rails', ['ng']);
-
-    function transformObject(data, transform) {
-        var newKey;
-
-        if (data && angular.isObject(data)) {
-            angular.forEach(data, function (value, key) {
-                newKey = transform(key);
-
-                if (newKey !== key) {
-                    data[newKey] = value;
-                    delete data[key];
-                }
-
-                transformObject(value, transform);
-            });
-        }
-    }
-
-    function camelize(key) {
-        if (!angular.isString(key)) {
-            return key;
-        }
-
-        // should this match more than word and digit characters?
-        return key.replace(/_[\w\d]/g, function (match, index, string) {
-            return index === 0 ? match : string.charAt(index + 1).toUpperCase();
-        });
-    }
-
-    function underscore(key) {
-        if (!angular.isString(key)) {
-            return key;
-        }
-
-        return key.replace(/[A-Z]/g, function (match, index) {
-            return index === 0 ? match : '_' + match.toLowerCase();
-        });
-    }
-
-    angular.module('rails').factory('railsFieldRenamingTransformer', function () {
-
-        return function (data) {
-            transformObject(data, underscore);
-            return data;
-        };
-    });
-
-    angular.module('rails').factory('railsFieldRenamingInterceptor', function () {
-        return function (promise) {
-            return promise.then(function (response) {
-                transformObject(response.data, camelize);
-                return response;
-            });
-        };
-    });
-
     angular.module('rails').factory('railsRootWrappingTransformer', function () {
         return function (data, resource) {
             var result = {};
@@ -84,110 +27,128 @@
         };
     });
 
-    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', '$injector', '$interpolate', function ($http, $q, $injector, $interpolate) {
-        // urlBuilder("/path/{{someId}}")(someId: 5) == "/path/5"
-        function urlBuilder(url) {
-            var expression;
+    angular.module('rails').factory('railsResourceFactory', ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
+            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
-            if (angular.isFunction(url)) {
-                return url;
-            }
+        function railsResourceFactory(config) {
+            var transformers = config.requestTransformers,
+                interceptors = config.responseInterceptors;
 
-            if (url.indexOf('{{') === -1) {
-                url = url + '/{{id}}';
-            }
+            function appendPath(url, path) {
+                if (path) {
+                    if (path[0] !== '/') {
+                        url += '/';
+                    }
 
-            expression = $interpolate(url);
-
-            return function (params) {
-                url = expression(params);
-
-                if (url.charAt(url.length - 1) === '/') {
-                    url = url.substr(0, url.length - 1);
+                    url += path;
                 }
 
                 return url;
-            };
-        }
-
-        function railsResourceFactory(config) {
-            var transformers = config.requestTransformers || ['railsRootWrappingTransformer', 'railsFieldRenamingTransformer'],
-                interceptors = config.responseInterceptors || ['railsFieldRenamingInterceptor', 'railsRootWrappingInterceptor'];
+            }
 
             function RailsResource(value) {
-                value || (value = {});
-                var immediatePromise = function(data) {
-                  return {
-                      resource: RailsResource,
-                      response: data,
-                      then: function(callback) {
-                        this.response = callback(this.response, this.resource);
-                        return immediatePromise(this.response);
-                      }
-                    }
-                };
-                var data = RailsResource.callInterceptors(immediatePromise({data: value || {}})).response.data;
-                angular.extend(this, data);
+                if (value) {
+                    var immediatePromise = function(data) {
+                      return {
+                          resource: RailsResource,
+                          response: data,
+                          then: function(callback) {
+                            this.response = callback(this.response, this.resource);
+                            return immediatePromise(this.response);
+                          }
+                        }
+                    };
+
+                    var data = RailsResource.callInterceptors(immediatePromise({data: value})).response.data;
+                    angular.extend(this, data);
+                }
             }
 
             RailsResource.setUrl = function(url) {
-              RailsResource.url = urlBuilder(url);
+              RailsResource.url = railsUrlBuilder(url);
             };
             RailsResource.setUrl(config.url);
-            RailsResource.rootName = config.name;
-            RailsResource.rootPluralName = config.pluralName || config.name + 's';
+
+            RailsResource.enableRootWrapping = config.wrapData === undefined ? true : config.wrapData;
             RailsResource.httpConfig = config.httpConfig || {};
             RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
+            RailsResource.serializer = RailsResourceInjector.createService(config.serializer || railsSerializer());
+            RailsResource.rootName = RailsResource.serializer.underscore(config.name);
+            RailsResource.rootPluralName = RailsResource.serializer.underscore(config.pluralName || RailsResource.serializer.pluralize(config.name));
 
-            // Add a function to run on response / initialize data
-            // model methods and this are not yet available at this point
+            /**
+             * Add a callback to run on response and construction.
+             * @param fn(resource, constructor) - resource is a resource instance, and constructor is the resource class calling the function
+             */
             RailsResource.beforeResponse = function(fn) {
+              var fn = RailsResourceInjector.getDependency(fn);
               RailsResource.responseInterceptors.push(function(promise) {
                 return promise.then(function(response) {
-                  fn(response.data, promise.resource);
-                  return response;
+                    fn(response.data, promise.resource);
+                    return response;
                 });
               });
             };
 
-            // Add a function to run on request data
+            /**
+             * Adds a function to run after serializing the data to send to the server, but before root-wrapping it.
+             * @param fn (data, constructor) - data object is the serialized resource instance, and constructor the resource class calling the function
+             */
             RailsResource.beforeRequest = function(fn) {
+              var fn = RailsResourceInjector.getDependency(fn);
               RailsResource.requestTransformers.push(function(data, resource) {
-                fn(data, resource);
-                return data;
+                return fn(data, resource) || data;
               });
             };
 
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
-                RailsResource.responseInterceptors.push(
-                    angular.isString(interceptor)
-                        ? $injector.get(interceptor)
-                        : $injector.invoke(interceptor)
-                );
+                RailsResource.responseInterceptors.push(RailsResourceInjector.getDependency(interceptor));
             });
 
             angular.forEach(transformers, function (transformer) {
-                RailsResource.requestTransformers.push(
-                    angular.isString(transformer)
-                        ? $injector.get(transformer)
-                        : $injector.invoke(transformer)
-                );
+                RailsResource.requestTransformers.push(RailsResourceInjector.getDependency(transformer));
             });
 
+            // transform data for request:
             RailsResource.transformData = function (data) {
+                data = RailsResource.serializer.serialize(data);
+
+                // data is now serialized. call request transformers including beforeRequest
                 angular.forEach(RailsResource.requestTransformers, function (transformer) {
                     data = transformer(data, RailsResource);
                 });
 
+
+                if (RailsResource.enableRootWrapping) {
+                    data = railsRootWrappingTransformer(data, RailsResource);
+                }
+
                 return data;
             };
 
+            // transform data on response:
             RailsResource.callInterceptors = function (promise) {
+                promise = promise.then(function (response) {
+                    // store off the data in case something (like our root unwrapping) assigns data as a new object
+                    response.originalData = response.data;
+                    return response;
+                });
 
+                if (RailsResource.enableRootWrapping) {
+                    promise.resource = RailsResource;
+                    promise = railsRootWrappingInterceptor(promise);
+                }
+
+                promise.then(function (response) {
+                    response.data = RailsResource.serializer.deserialize(response.data, RailsResource);
+                    return response;
+                });
+
+                // data is now deserialized. call response interceptors including beforeResponse
                 angular.forEach(RailsResource.responseInterceptors, function (interceptor) {
                     promise.resource = RailsResource;
                     promise = interceptor(promise);
@@ -197,25 +158,8 @@
             };
 
             RailsResource.processResponse = function (promise) {
-                promise = RailsResource.callInterceptors(promise);
-
-                return promise.then(function (response) {
-                    var result;
-
-                    if (angular.isArray(response.data)) {
-                        result = [];
-
-                        angular.forEach(response.data, function (value) {
-                            result.push(angular.extend(new RailsResource(), value));
-                        });
-                    } else if (angular.isObject(response.data)) {
-                        result = angular.extend(new RailsResource(), response.data);
-
-                    } else {
-                        result = response.data;
-                    }
-
-                    return result;
+                return RailsResource.callInterceptors(promise).then(function (response) {
+                    return response.data;
                 });
             };
 
@@ -255,14 +199,15 @@
              *
              * If the context is a number and the URL string does
              * @param context
+             * @param path {string} (optional) An additional path to append to the URL
              * @return {string}
              */
-            RailsResource.$url = RailsResource.resourceUrl = function (context) {
+            RailsResource.$url = RailsResource.resourceUrl = function (context, path) {
                 if (!angular.isObject(context)) {
                     context = {id: context};
                 }
 
-                return RailsResource.url(context || {});
+                return appendPath(RailsResource.url(context || {}), path);
             };
 
             RailsResource.$get = function (url, queryParams) {
@@ -277,17 +222,17 @@
                 return RailsResource.$get(RailsResource.resourceUrl(context), queryParams);
             };
 
-            RailsResource.prototype.$url = function() {
-                return RailsResource.resourceUrl(this);
+            /**
+             * Returns the URL for this resource.
+             *
+             * @param path {string} (optional) An additional path to append to the URL
+             * @returns {string} The URL for the resource
+             */
+            RailsResource.prototype.$url = function(path) {
+                return appendPath(RailsResource.resourceUrl(this), path);
             };
 
             RailsResource.prototype.processResponse = function (promise) {
-                promise = promise.then(function (response) {
-                    // store off the data in case something (like our root unwrapping) assigns data as a new object
-                    response.originalData = response.data;
-                    return response;
-                });
-
                 promise = RailsResource.callInterceptors(promise);
 
                 return promise.then(angular.bind(this, function (response) {

@@ -1,4 +1,4 @@
-describe("http setting", function () {
+describe('http setting', function () {
     'use strict';
 
     beforeEach(module('rails'));

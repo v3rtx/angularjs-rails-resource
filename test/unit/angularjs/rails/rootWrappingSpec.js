@@ -1,4 +1,4 @@
-describe("root wrapping", function () {
+describe('root wrapping', function () {
     'use strict';
 
     beforeEach(module('rails'));
