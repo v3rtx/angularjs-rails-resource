@@ -223,6 +223,8 @@ All of the instance methods will update the instance in-place on response and wi
 * update() - Submits the resource instance to the resource's URL (e.g. /books/1234) using a PUT
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
+* save() - Calls <code>create</code> if <code>isNew</code> returns true, otherwise it calls <code>update</code>.
+
 * remove(), delete() - Executes an HTTP DELETE against the resource's URL (e.g. /books/1234)
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
@@ -280,9 +282,9 @@ Serializers have the following available configuration options:
 #### Customization API
 The customizer function passed to the railsSerializer has available to it the following methods for altering the serialization of an object.  None of these methods support nested attribute names (e.g. <code>'books.publicationDate'</code>), in order to customize the serialization of the <code>books</code> objects you would need to specify a custom serializer for the <code>books</code> attribute.
 
-* exclude (attributeName...) - Accepts a variable list of attribute names to exclude from JSON serialization and deserialization.
+* exclude (attributeName...) - Accepts a variable list of attribute names to exclude from JSON serialization.  This has no impact on what is deserialized from the server.
 
-* only (attributeName...) - Accepts a variable list of attribute names that should be included in JSON serialization and deserialization.  Using this method will by default exclude all other attributes and only the ones explicitly included using <code>only</code> will be serialized.
+* only (attributeName...) - Accepts a variable list of attribute names that should be included in JSON serialization.  This has no impact on what is deserialized from the server.  Using this method will by default exclude all other attributes and only the ones explicitly included using <code>only</code> will be serialized.
 
 * rename (javascriptName, jsonName) - Specifies a custom name mapping for an attribute.  On serializing to JSON the <code>jsonName</code> will be used.  On deserialization, if <code>jsonName</code> is seen then it will be renamed as javascriptName in the resulting resource.  Right now it is still passed to underscore so you could do 'publicationDate' -> 'releaseDate' and it will still underscore as release_date.  However, that may be changed to prevent underscore from breaking some custom name that it doesn't handle properly.
 
