@@ -14,6 +14,13 @@
 - Added <code>enableRootWrapping</code> configuration option to be able to turn off root wrapping instead
 - Added path option to <code>$url</code> methods to make it easier to construct a nested url.
 
+<a name="0.1.7"></a>
+# 0.1.7
+## Bug Fixes
+
+## Features
+- New <code>save</code> instance method added to resources
+
 <a name="0.1.6"></a>
 # 0.1.6
 ## Bug Fixes
