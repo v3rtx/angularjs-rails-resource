@@ -87,7 +87,7 @@ When defining a resource, you can pass a custom [serializer](#serializers) using
         serializer: railsSerializer(function () {
             this.exclude('birthDate', 'books');
             this.nestedAttribute('books');
-            this.nestedResource('books', 'Book');
+            this.resource('books', 'Book');
         })
     });
 
