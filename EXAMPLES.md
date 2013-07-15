@@ -13,7 +13,7 @@ a resource instance for the book.
         return railsResourceFactory({url: '/books', name: 'book'});
     }]);
 
-    angular.module('book.services').factory('Author', ['railsResourceFactory', function (railsResourceFactory) {
+    angular.module('book.services').factory('Author', ['railsResourceFactory', 'railsSerializer', function (railsResourceFactory, railsSerializer) {
         return railsResourceFactory({
             url: '/authors',
             name: 'author',
@@ -36,7 +36,7 @@ a resource instance for the book.
 While we don't have logic for full nested attributes support, the new serializer does allow you to specify which fields
 should be passed with the <code>_attributes</code> suffix.
 
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+    angular.module('book.services').factory('Book', ['railsResourceFactory', 'railsSerializer', function (railsResourceFactory, railsSerializer) {
         return railsResourceFactory({
             url: '/books',
             name: 'book',
@@ -51,7 +51,7 @@ Sometimes you don't want to serialize certain fields when updating an object.  T
 We know that we don't accept nested attributes for the author on the server so we want to exclude it from the JSON to reduce
 the amount of data being sent to the server.
 
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+    angular.module('book.services').factory('Book', ['railsResourceFactory', 'railsSerializer', function (railsResourceFactory railsSerializer) {
         return railsResourceFactory({
             url: '/books',
             name: 'book',
@@ -66,7 +66,7 @@ the amount of data being sent to the server.
 You can also be very restrictive and only include specific attributes that you want to send to the server.  All other attribtues
 would be excluded by default.
 
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+    angular.module('book.services').factory('Book', ['railsResourceFactory', 'railsSerializer', function (railsResourceFactory. railsSerializer) {
         return railsResourceFactory({
             url: '/books',
             name: 'book',
