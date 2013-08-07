@@ -134,6 +134,7 @@ The following options are available for the config object passed to the factory 
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
+ * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
 
 **NOTE:** The names should be specified using camel case when using the key transformations because that happens before the root wrapping by default.
 For example, you should specify "publishingCompany" and "publishingCompanies" instead of "publishing_company" and "publishing_companies".
@@ -203,12 +204,16 @@ passed to the function is still a Resource instance as long as another transform
         * **resource** {Resource class} - The Resource class that is calling the function
         * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
 
-* beforeResponse(fn(data, resource)) - See [Interceptors](#interceptors) for more information.  The function is called prior to deserialization so the data represents the
-raw data returned from the server.  Since the data has not been deserialized into a Resource instance yet, none of the [Resource instance methods](#instance-methods) are available.
-    * fn(data, resource) {function} - The function to add as an interceptor
+* beforeResponse(fn(data, resource, context)) - See [Interceptors](#interceptors) for more information.  The function is called after the response data has been deserialized.
+    * fn(data, resource, context) {function} - The function to add as an interceptor
         * **data** {object} - The data received from the server
-        * **resource** {Resource class} - The Resource class that is calling the function
-        * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
+        * **resource** {Resource function} - The Resource constructor that is calling the function
+        * **context** {Resource|undefined} - The Resource instance that is calling the function or undefined if called from a class level method (get, query).
+
+* afterResponse(fn(data, resource, context)) - See [Interceptors](#interceptors) for more information.  This function is called after all internal processing and beforeResponse callbacks have been completed.
+    * fn(data, resource) {function} - The function to add as an interceptor
+        * **data** {object} - The result, either an array of resource instances or a single resource instance.
+        * **resource** {Resource function} - The Resource constructor that is calling the function
 
 ### Instance Methods
 The instance methods can be used on any instance (created manually or returned in a promise response) of a resource.
@@ -306,7 +311,7 @@ The transformers and interceptors can be specified using an array containing tra
 that can be resolved using Angular's DI.  The transformers / interceptors concept was prior to the [serializers](#serializers) but
 we kept the API available because there may be use cases that can be accomplished with these but not the serializers.
 
-### Transformers
+### Request Transformers
 Transformer functions are called to transform the data before we send it to $http for POST/PUT.
 
 A transformer function is called with two parameters:
@@ -319,17 +324,32 @@ The resource also exposes a class method <code>beforeRequest(fn)</code> that acc
 to the list of transformers for the resource class.  The function passed to <code>beforeRequest</code> is called with the same two parameters.  One difference
 is that the functions are not required to return the data, though they still can if they need to return a new object.  See [example](EXAMPLES.md#specifying-transformer).
 
-### Interceptors
+### Response Interceptors
 Interceptor functions utilize [$q promises](http://docs.angularjs.org/api/ng.$q) to process the data returned from the server.
 
 The interceptor is called with the promise returned from $http and is expected to return a promise for chaining.  The promise passed to each
-interceptor contains a reference to the resource to expose the configured options of the resource.  Each interceptor promise
-is expected to return the response or a $q.reject.  See [Promises](#promises) for more information about the promise data.
+interceptor contains two additional properties:
+  * **resource** - The Resource constructor function for the resource calling the interceptor
+  * **context** - The Resource instance if applicable (create, update, delete) calling the interceptor
+
+Each interceptor promise is expected to return the response or a $q.reject.  See [Promises](#promises) for more information about the promise data.
 
 The resource also exposes a class method <code>beforeResponse(fn)</code> that accepts a function to execute and automatically wraps it as an interceptor and appends it
-to the list of interceptors for the resource class.  Functions added with beforeResponse don't need to know anything about promises since they are automatically wrapped
+to the list of interceptors for the resource class.  Functions added with <code>beforeResponse</code> don't need to know anything about promises since they are automatically wrapped
 as an interceptor.
 
+### After Response Interceptors
+After response interceptors are called after all processing and response interceptors have completed.  An after response interceptor is analogous to
+chaining a promise after the resource method call but is instead for all methods.
+
+The after response interceptors are called with the final processing promise and is expected to return a promise for chaining.  The promise is resolved
+with the result of the operation which will be either a resource instance or an array of resource instances.  The promise passed to the interceptor
+has the following additional property:
+ * **resource** - The Resource constructor function for the resource calling the interceptor
+
+The resource also exposes a class method <code>afterResponse(fn)</code> that accepts a function to execute and automatically wraps it as an interceptor and appends it
+to the list of after response interceptors for the resource class.  Functions added with <code>afterResponse</code> don't need to know anything about promises since they are automatically wrapped
+as an interceptor.
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).
