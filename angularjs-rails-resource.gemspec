@@ -5,8 +5,9 @@ Gem::Specification.new do |gem|
   gem.authors       = ["Tommy Odom", "Chris Chase"]
   gem.email         = ["odom@finelineprototyping.com", "chris@finelineprototyping.com"]
   gem.description   = %q{A small AngularJS add-on for integrating with Rails via JSON more easily.}
-  gem.summary       = %q{}
+  gem.summary       = %q{AngularJS add-on resource add-on for integrating with Rails}
   gem.homepage      = "https://github.com/finelineprototyping/angularjs-rails-resource"
+  gem.license       = 'MIT'
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
