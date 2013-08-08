@@ -249,6 +249,8 @@ that dictate how serialization and deserialization is performed.  Users can: ren
 with the ability to exclude all attributes by default and only serialize ones explicitly allowed, specify other serializers to use
 for an attribute and even specify that an attribute is a nested resource.
 
+AngularJS automatically excludes all attribute keys that begin with $ in their toJson code.
+
 ### railsSerializer
 * railsSerializer(options, customizer) - Builds a Serializer constructor function using the configuration options specified.
     * **options** {object} (optional) - Configuration options to alter the default operation of the serializers.  This parameter can be excluded and the
@@ -279,7 +281,7 @@ Serializers have the following available configuration options:
     * **returns** {string} - The name as it should appear in the resource
 * excludeByDefault {boolean} - Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
     * default: false
-* exclusionMatchers {array} - An list of rules that should be applied to determine whether or not an attribute should be excluded.  For instance, $resource excludes all variables that start with $.  The values in the array can be one of the following types:
+* exclusionMatchers {array} - An list of rules that should be applied to determine whether or not an attribute should be excluded.  The values in the array can be one of the following types:
     * string - Defines a prefix that is used to test for exclusion
     * RegExp - A custom regular expression that is tested against the attribute name
     * function - A custom function that accepts a string argument and returns a boolean with true indicating exclusion.

@@ -4,7 +4,7 @@
             underscore: RailsInflector.underscore,
             camelize: RailsInflector.camelize,
             pluralize: RailsInflector.pluralize,
-            exclusionMatchers: ['$'],
+            exclusionMatchers: [],
             excludeByDefault: false
         };
 
