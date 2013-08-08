@@ -32,7 +32,8 @@
 
         function railsResourceFactory(config) {
             var transformers = config.requestTransformers,
-                interceptors = config.responseInterceptors;
+                interceptors = config.responseInterceptors,
+                afterInterceptors = config.afterResponseInterceptors;
 
             function appendPath(url, path) {
                 if (path) {
@@ -47,19 +48,21 @@
             }
 
             function RailsResource(value) {
+                var instance = this;
                 if (value) {
                     var immediatePromise = function(data) {
                       return {
                           resource: RailsResource,
+                          context: instance,
                           response: data,
                           then: function(callback) {
-                            this.response = callback(this.response, this.resource);
+                            this.response = callback(this.response, this.resource, this.context);
                             return immediatePromise(this.response);
                           }
                         }
                     };
 
-                    var data = RailsResource.callInterceptors(immediatePromise({data: value})).response.data;
+                    var data = RailsResource.callInterceptors(immediatePromise({data: value}), this).response.data;
                     angular.extend(this, data);
                 }
             }
@@ -74,6 +77,7 @@
             RailsResource.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, RailsResource.httpConfig.headers || {});
             RailsResource.requestTransformers = [];
             RailsResource.responseInterceptors = [];
+            RailsResource.afterResponseInterceptors = [];
             RailsResource.defaultParams = config.defaultParams;
             RailsResource.serializer = RailsResourceInjector.createService(config.serializer || railsSerializer());
             RailsResource.rootName = RailsResource.serializer.underscore(config.name);
@@ -81,13 +85,29 @@
 
             /**
              * Add a callback to run on response and construction.
-             * @param fn(resource, constructor) - resource is a resource instance, and constructor is the resource class calling the function
+             * @param fn(response data, constructor, context) - response data is either the resource instance returned or an array of resource instances,
+             *      constructor is the resource class calling the function,
+             *      context is the resource instance of the calling method (create, update, delete) or undefined if the method was a class method (get, query)
              */
             RailsResource.beforeResponse = function(fn) {
-              var fn = RailsResourceInjector.getDependency(fn);
+              fn = RailsResourceInjector.getDependency(fn);
               RailsResource.responseInterceptors.push(function(promise) {
                 return promise.then(function(response) {
-                    fn(response.data, promise.resource);
+                    fn(response.data, promise.resource, promise.context);
+                    return response;
+                });
+              });
+            };
+
+            /**
+             * Add a callback to run after response has been processed.  These callbacks are not called on object construction.
+             * @param fn(response data, constructor) - response data is either the resource instance returned or an array of resource instances and constructor is the resource class calling the function
+             */
+            RailsResource.afterResponse = function(fn) {
+              fn = RailsResourceInjector.getDependency(fn);
+              RailsResource.afterResponseInterceptors.push(function(promise) {
+                return promise.then(function(response) {
+                    fn(response, promise.resource);
                     return response;
                 });
               });
@@ -98,7 +118,7 @@
              * @param fn (data, constructor) - data object is the serialized resource instance, and constructor the resource class calling the function
              */
             RailsResource.beforeRequest = function(fn) {
-              var fn = RailsResourceInjector.getDependency(fn);
+              fn = RailsResourceInjector.getDependency(fn);
               RailsResource.requestTransformers.push(function(data, resource) {
                 return fn(data, resource) || data;
               });
@@ -107,6 +127,10 @@
             // copied from $HttpProvider to support interceptors being dependency names or anonymous factory functions
             angular.forEach(interceptors, function (interceptor) {
                 RailsResource.responseInterceptors.push(RailsResourceInjector.getDependency(interceptor));
+            });
+
+            angular.forEach(afterInterceptors, function (interceptor) {
+                RailsResource.afterResponseInterceptors.push(RailsResourceInjector.getDependency(interceptor));
             });
 
             angular.forEach(transformers, function (transformer) {
@@ -131,7 +155,7 @@
             };
 
             // transform data on response:
-            RailsResource.callInterceptors = function (promise) {
+            RailsResource.callInterceptors = function (promise, context) {
                 promise = promise.then(function (response) {
                     // store off the data in case something (like our root unwrapping) assigns data as a new object
                     response.originalData = response.data;
@@ -151,6 +175,18 @@
                 // data is now deserialized. call response interceptors including beforeResponse
                 angular.forEach(RailsResource.responseInterceptors, function (interceptor) {
                     promise.resource = RailsResource;
+                    promise.context = context;
+                    promise = interceptor(promise);
+                });
+
+                return promise;
+            };
+
+            // transform data after response has been converted to a resource instance:
+            RailsResource.callAfterInterceptors = function (promise) {
+                // data is now deserialized. call response interceptors including afterResponse
+                angular.forEach(RailsResource.afterResponseInterceptors, function (interceptor) {
+                    promise.resource = RailsResource;
                     promise = interceptor(promise);
                 });
 
@@ -158,9 +194,11 @@
             };
 
             RailsResource.processResponse = function (promise) {
-                return RailsResource.callInterceptors(promise).then(function (response) {
+                promise = RailsResource.callInterceptors(promise).then(function (response) {
                     return response.data;
                 });
+
+                return RailsResource.callAfterInterceptors(promise);
             };
 
             RailsResource.getParameters = function (queryParams) {
@@ -233,9 +271,9 @@
             };
 
             RailsResource.prototype.processResponse = function (promise) {
-                promise = RailsResource.callInterceptors(promise);
+                promise = RailsResource.callInterceptors(promise, this);
 
-                return promise.then(angular.bind(this, function (response) {
+                promise = promise.then(angular.bind(this, function (response) {
                     // we may not have response data
                     if (response.hasOwnProperty('data') && angular.isObject(response.data)) {
                         angular.extend(this, response.data);
@@ -243,6 +281,8 @@
 
                     return this;
                 }));
+
+                return RailsResource.callAfterInterceptors(promise);
             };
 
             angular.forEach(['post', 'put', 'patch'], function (method) {

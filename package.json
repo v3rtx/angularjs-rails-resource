@@ -2,10 +2,15 @@
   "name": "angularjs-rails-resource",
   "version": "0.0.0",
   "dependencies": {
-    "karma": "~0.8"
   },
   "scripts": {
-   "test": "./node_modules/.bin/karma start --single-run --browsers PhantomJS"
+    "test": "./node_modules/.bin/karma start --single-run --browsers PhantomJS"
+  },
+  "devDependencies": {
+    "karma": "~0.10",
+    "karma-jasmine": "~0.1",
+    "karma-chrome-launcher": "~0.1",
+    "karma-phantomjs-launcher": "~0.1",
+    "karma-junit-reporter": "~0.1"
   }
 }
-
