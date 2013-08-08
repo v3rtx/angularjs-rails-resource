@@ -1,3 +1,11 @@
+<a name="0.2.1"></a>
+# 0.2.1
+## Bug Fixes
+
+## Features
+- Added context property to before response interceptors to have access to the calling resource instance in the case of create/update/delete.
+- Added after response interceptors to be able to define custom callbacks that execute on all resources after method completion.
+
 <a name="0.2.0"></a>
 # 0.2.0
 ## Breaking Changes
