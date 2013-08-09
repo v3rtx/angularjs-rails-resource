@@ -132,6 +132,7 @@ The following options are available for the config object passed to the factory 
          * **Accept** - application/json
          * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
+ * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)

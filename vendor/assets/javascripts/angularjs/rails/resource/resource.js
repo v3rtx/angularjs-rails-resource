@@ -82,6 +82,7 @@
             RailsResource.serializer = RailsResourceInjector.createService(config.serializer || railsSerializer());
             RailsResource.rootName = RailsResource.serializer.underscore(config.name);
             RailsResource.rootPluralName = RailsResource.serializer.underscore(config.pluralName || RailsResource.serializer.pluralize(config.name));
+            RailsResource.updateMethod = (config.updateMethod || 'put').toLowerCase();
 
             /**
              * Add a callback to run on response and construction.
@@ -309,7 +310,7 @@
             };
 
             RailsResource.prototype.update = function () {
-                return this.$put(this.$url(), this);
+                return this['$' + RailsResource.updateMethod](this.$url(), this);
             };
 
             RailsResource.prototype.isNew = function () {
