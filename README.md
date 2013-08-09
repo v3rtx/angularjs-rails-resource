@@ -259,8 +259,8 @@ AngularJS automatically excludes all attribute keys that begin with $ in their t
     * **returns** {Serializer} - A Serializer constructor function
 
 ### Configuration
-The <code>railsSerializer</code> function takes a customizer function that is called on create within the context of the constructed Serializer.  From within the customizer function you can call customization functions that affect what gets serialized and how or override the default options.
-In addition, <code>railsSerializer</code> exposes a field <code>defaultOptions</code> that allows you to globally override the defaults for the configuration options.
+The <code>railsSerializer</code> function takes a customizer function that is called on create within the context of the constructed Serializer.
+From within the customizer function you can call customization functions that affect what gets serialized and how or override the default options.
 
 #### Configuration Options
 Serializers have the following available configuration options:
@@ -279,12 +279,28 @@ Serializers have the following available configuration options:
     * parameters
         * **attribute** {string} - The name as it appeared in the JSON
     * **returns** {string} - The name as it should appear in the resource
-* excludeByDefault {boolean} - Specifies whether or not JSON serialization should exclude all attributes from serialization by default.
-    * default: false
 * exclusionMatchers {array} - An list of rules that should be applied to determine whether or not an attribute should be excluded.  The values in the array can be one of the following types:
     * string - Defines a prefix that is used to test for exclusion
     * RegExp - A custom regular expression that is tested against the attribute name
     * function - A custom function that accepts a string argument and returns a boolean with true indicating exclusion.
+
+#### Provider Configuration
+<code>railsSerializer</code> can be injected as <code>railsSerializerProvider</code> into your app's config method to configure defaults for all the serializers application-wide.
+Each configuration option listed is exposed as a method on the provider that takes the configuration value as the parameter and returns the provider to allow method chaining.
+
+* underscore - {function(fn):railsSerializerProvider}
+* camelize - {function(fn):railsSerializerProvider}
+* pluralize - {function(fn):railsSerializerProvider}
+* exclusionMatchers - {function(matchers):railsSerializerProvider}
+
+For example, to turn off the key renaming from underscore to camel case and vice versa you would do:
+
+````javascript
+app.config(function (railsSerializerProvider) {
+    railsSerializerProvider.underscore(function (value) { return value; })
+        .camelize(function (value) { return value; });
+);
+````
 
 #### Customization API
 The customizer function passed to the railsSerializer has available to it the following methods for altering the serialization of an object.  None of these methods support nested attribute names (e.g. <code>'books.publicationDate'</code>), in order to customize the serialization of the <code>books</code> objects you would need to specify a custom serializer for the <code>books</code> attribute.
