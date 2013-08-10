@@ -521,6 +521,6 @@
 
             railsSerializer.defaultOptions = defaultOptions;
             return railsSerializer;
-        }]
+        }];
     });
 }());
