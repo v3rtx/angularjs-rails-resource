@@ -132,12 +132,31 @@ The following options are available for the config object passed to the factory 
          * **Accept** - application/json
          * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
+ * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
 
 **NOTE:** The names should be specified using camel case when using the key transformations because that happens before the root wrapping by default.
 For example, you should specify "publishingCompany" and "publishingCompanies" instead of "publishing_company" and "publishing_companies".
+
+### Provider Configuration
+<code>railsResourceFactory</code> can be injected as <code>railsResourceFactoryProvider</code> into your app's config method to configure defaults for all the resources application-wide.
+The individual resource configuration takes precedence over application-wide default configuration values.
+Each configuration option listed is exposed as a method on the provider that takes the configuration value as the parameter and returns the provider to allow method chaining.
+
+* enableRootWrapping - {function(boolean):railsSerializerProvider}
+* httpConfig - {function(object):railsSerializerProvider}
+* defaultParams - {function(object):railsSerializerProvider}
+* updateMethod - {function(boolean):railsSerializerProvider}
+
+For example, to turn off the root wrapping application-wide and set the update method to PATCH:
+
+````javascript
+app.config(function (railsResourceFactoryProvider) {
+    railsResourceFactoryProvider.enableRootWrapping(false).updateMethod('patch');
+);
+````
 
 ## Resource URLs
 The URL can be specified as one of three ways:

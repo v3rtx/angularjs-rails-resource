@@ -228,6 +228,53 @@ describe('railsResourceFactory', function () {
             expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
         }));
 
+        it('should be able to create new instance and update it using PATCH', inject(function($httpBackend) {
+            var promise, Resource, data, defaultParamsConfig = {};
+
+            angular.copy(config, defaultParamsConfig);
+            defaultParamsConfig.updateMethod = 'patch';
+
+            Resource = factory(defaultParamsConfig);
+            data = new Resource({abcDef: 'xyz'});
+
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
+            data.create();
+            $httpBackend.flush(1);
+
+            expect(data).toEqualData({id: 123, abcDef: 'xyz'});
+
+            $httpBackend.expectPATCH('/test/123', {test: {abc_def: 'xyz', id: 123, xyz: 'abc'}}).respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            data.xyz = 'abc';
+            data.update();
+            $httpBackend.flush();
+
+            expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
+        }));
+
+        it('should be able to create new instance and update it using save using PATCH', inject(function($httpBackend) {
+            var promise, Resource, data, defaultParamsConfig = {};
+
+            angular.copy(config, defaultParamsConfig);
+            defaultParamsConfig.updateMethod = 'patch';
+
+            Resource = factory(defaultParamsConfig);
+            data = new Resource({abcDef: 'xyz'});
+
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
+            data.save();
+            $httpBackend.flush(1);
+
+            expect(data).toEqualData({id: 123, abcDef: 'xyz'});
+
+            $httpBackend.expectPATCH('/test/123', {test: {abc_def: 'xyz', id: 123, xyz: 'abc'}}).respond(200, {test: {id: 123, abc_def: 'xyz', xyz: 'abc', extra: 'test'}});
+            data.xyz = 'abc';
+            data.save();
+            $httpBackend.flush();
+
+            expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
+        }));
+
+
         it('create with default params should add parameter abc=1', inject(function($httpBackend) {
             var promise, Resource, data, defaultParamsConfig = {};
 
