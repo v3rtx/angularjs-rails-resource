@@ -1,3 +1,11 @@
+<a name="0.2.2"></a>
+# 0.2.2
+## Bug Fixes
+
+## Features
+- Added updateMethod configuration option to railsResourceFactory to specify what HTTP method should be used to perform the update action
+- Exposed default configuration options for both railsResourceFactory and railsSerializer as provider configuration options.
+
 <a name="0.2.1"></a>
 # 0.2.1
 ## Bug Fixes
