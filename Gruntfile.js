@@ -22,7 +22,7 @@ module.exports = function(grunt) {
     },
     concat: {
       options: {
-        banner: "<%= meta.banner %>",
+        banner: "<%= meta.banner %>"
       },
       dist: {
         src: srcFiles,
@@ -47,7 +47,7 @@ module.exports = function(grunt) {
       options: {
         // options here to override JSHint defaults
         globals: {
-          angular: true,
+          angular: true
         }
       }
     },
