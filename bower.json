@@ -22,6 +22,7 @@
     "vendor",
     "lib",
     "*.zip",
-    ".travis.yml"
+    ".travis.yml",
+    ".gitignore"
   ]
 }
