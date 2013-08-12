@@ -1,6 +1,6 @@
 {
   "name": "angularjs-rails-resource",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "main": "angularjs-rails-resource.js",
   "description": "A resource factory inspired by $resource from AngularJS",
   "repository": {
@@ -21,6 +21,7 @@
     "test",
     "vendor",
     "lib",
-    "*.zip"
+    "*.zip",
+    ".travis.yml"
   ]
 }
