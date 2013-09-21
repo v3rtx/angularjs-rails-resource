@@ -200,7 +200,7 @@ Resources created using <code>railsResourceFactory</code> have the following cla
     * **context** {*} (optional) - A context object that is used during url evaluation to resolve expression variables
     * **returns** {promise} - A promise that will be resolved with an array of new Resource instances
 
-* get(context) - Executs a GET request against the resource's url (e.g. /books/1234).
+* get(context) - Executes a GET request against the resource's url (e.g. /books/1234).
     * **context** {*} - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
     * **returns** {promise} A promise that will be resolved with a new instance of the Resource
 
