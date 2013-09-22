@@ -408,7 +408,6 @@ describe('railsResourceFactory', function () {
                 expect(test).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
             }));
         });
-
     });
 
     describe('plural', function() {
@@ -468,6 +467,64 @@ describe('railsResourceFactory', function () {
 
             expect(angular.isArray(result)).toBe(true);
             expect(result.length).toBe(0);
+        }));
+    });
+
+    describe('subclassing', function() {
+        var $httpBackend, $rootScope, factory, Book,
+            config = {
+                url: '/test',
+                name: 'test'
+            },
+            // generated CoffeeScript Code
+            __hasProp = {}.hasOwnProperty,
+            __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+
+        beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory) {
+            $httpBackend = _$httpBackend_;
+            $rootScope = _$rootScope_;
+            factory = railsResourceFactory;
+
+            // generated CoffeeScript Code
+            Book = (function(_super) {
+              __extends(Book, _super);
+
+              Book.config.url = '/books';
+
+              Book.config.name = 'book';
+
+              Book.config.resourceConstructor = Book;
+
+              function Book() {
+                this.subclass = true;
+              }
+
+              return Book;
+
+            })(railsResourceFactory());
+        }));
+
+        afterEach(function() {
+            $httpBackend.verifyNoOutstandingExpectation();
+            $httpBackend.verifyNoOutstandingRequest();
+        });
+
+        it('get should return resource instance of subclass', inject(function($httpBackend) {
+            var promise, result;
+
+            $httpBackend.expectGET('/books/123').respond(200, {book: {id: 123, abc: 'xyz'}});
+
+            expect(promise = Book.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(Book);
+            expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
         }));
     });
 });

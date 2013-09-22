@@ -3,11 +3,11 @@ describe('resource provider factory config', function () {
 
     it('should allow disabling root wrapping globally', function () {
         module('rails', function (railsResourceFactoryProvider) {
-            expect(railsResourceFactoryProvider.enableRootWrapping(false)).toBe(railsResourceFactoryProvider);
+            expect(railsResourceFactoryProvider.rootWrapping(false)).toBe(railsResourceFactoryProvider);
         });
 
         inject(function (railsResourceFactory) {
-            expect(railsResourceFactory({name: 'test', url: '/test'}).enableRootWrapping).toBe(false);
+            expect(railsResourceFactory({name: 'test', url: '/test'}).config.rootWrapping).toBe(false);
         });
     });
 
@@ -17,7 +17,7 @@ describe('resource provider factory config', function () {
         });
 
         inject(function (railsResourceFactory) {
-            expect(railsResourceFactory({name: 'test', url: '/test'}).updateMethod).toBe('patch');
+            expect(railsResourceFactory({name: 'test', url: '/test'}).config.updateMethod).toBe('patch');
         });
     });
 
@@ -27,7 +27,7 @@ describe('resource provider factory config', function () {
         });
 
         inject(function (railsResourceFactory) {
-            expect(railsResourceFactory({name: 'test', url: '/test'}).httpConfig.headers).toEqualData({'Accept': 'application/json', 'Content-Type': 'application/json', 'test': 'header'});
+            expect(railsResourceFactory({name: 'test', url: '/test'}).config.httpConfig.headers).toEqualData({'Accept': 'application/json', 'Content-Type': 'application/json', 'test': 'header'});
         });
     });
 
@@ -37,7 +37,7 @@ describe('resource provider factory config', function () {
         });
 
         inject(function (railsResourceFactory) {
-            expect(railsResourceFactory({name: 'test', url: '/test'}).defaultParams).toEqualData({'test': '1'});
+            expect(railsResourceFactory({name: 'test', url: '/test'}).config.defaultParams).toEqualData({'test': '1'});
         });
     });
 });

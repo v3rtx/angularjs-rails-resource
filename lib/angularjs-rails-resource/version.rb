@@ -1,7 +1,7 @@
 module Angularjs
   module Rails
     module Resource
-      VERSION = '0.2.2'
+      VERSION = '1.0.0.pre1'
     end
   end
 end

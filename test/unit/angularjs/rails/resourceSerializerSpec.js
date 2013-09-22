@@ -85,7 +85,7 @@ describe('railsResourceFactory', function () {
                 url: '/authors',
                 name: 'author',
                 serializer: railsSerializer(function () {
-                    this.resource('books', Book)
+                    this.resource('books', Book);
                     this.exclude('birthDate');
                 })
             });

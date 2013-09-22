@@ -3,11 +3,12 @@
 
 A resource factory inspired by $resource from AngularJS and [Misko's recommendation](http://stackoverflow.com/questions/11850025/recommended-way-of-getting-data-from-the-server).
 
-When starting out with AngularJS and Rails we initially were using $resource but there were three things we didn't like that this gem sets out to provide:
+This library is not a drop in replacement for $resource.  There are significant differences that you should be aware of:
 
- 1.  $resource didn't return promises
- 2.  Rails prefers JSON be root wrapped
- 3.  Our JSON contained snake case (underscored) keys coming from our database but we didn't want to mix snake case and camel case in our UI
+*  <code>get</code> and <code>query</code> return $q promises, not an instance or array that will be populated.  To gain access to the results you
+should use the promise <code>then</code> function.
+*  By default we perform root wrapping and unwrapping (if wrapped) when communicating with the server.
+*  By default we convert object key names underscored to camel case.
 
 In case you are unfamiliar, the intent of the resource is to behave a bit like a remote model object.  One of the nice things about AngularJS
  is that it does not require you to create specific models for all of your data which gives you a lot of freedom for treating model data as basic
@@ -17,8 +18,6 @@ In case you are unfamiliar, the intent of the resource is to behave a bit like a
 The resource object created by this factory simplifies access to those models by exposing a mix of "class" methods (query, get) and
  "instance" methods (create, update, delete/remove).
 
-This module is being used for applications we are writing and we expect that over time that we will be adding additional functionality but we welcome contributions and suggestions.
-
 ## Changes
 Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
 
@@ -26,7 +25,7 @@ Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes betwee
 
 Add this line to your application's Gemfile:
 
-    gem 'angularjs-rails-resource', '~> 0.2.0'
+    gem 'angularjs-rails-resource', '~> 1.0.0'
 
 Include the javascript somewhere in your asset pipeline:
 
@@ -120,13 +119,14 @@ to create, update, and delete instance methods (or any others you add).
 
 
 ### Config Options
-The following options are available for the config object passed to the factory function.
+The following options are available for the config object passed to the factory function.  Each of the config options is accessible on the generated resource from the <code>config</code> property.
 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
- * **enableRootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
+ * **rootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers) method is used to calculate
         the plural name from the singular name.
+ * **resourceConstructor** *(optional)* - Overrides the constructor used when deserializing data from the server.  This is useful for subclassing techniques and should work with CoffeeScript classes.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
@@ -145,7 +145,7 @@ For example, you should specify "publishingCompany" and "publishingCompanies" in
 The individual resource configuration takes precedence over application-wide default configuration values.
 Each configuration option listed is exposed as a method on the provider that takes the configuration value as the parameter and returns the provider to allow method chaining.
 
-* enableRootWrapping - {function(boolean):railsSerializerProvider}
+* rootWrapping - {function(boolean):railsSerializerProvider}
 * httpConfig - {function(object):railsSerializerProvider}
 * defaultParams - {function(object):railsSerializerProvider}
 * updateMethod - {function(boolean):railsSerializerProvider}
@@ -154,7 +154,7 @@ For example, to turn off the root wrapping application-wide and set the update m
 
 ````javascript
 app.config(function (railsResourceFactoryProvider) {
-    railsResourceFactoryProvider.enableRootWrapping(false).updateMethod('patch');
+    railsResourceFactoryProvider.rootWrapping(false).updateMethod('patch');
 );
 ````
 

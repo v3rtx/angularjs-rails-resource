@@ -5,7 +5,7 @@ describe('root wrapping', function () {
 
     var q, rootScope,
         transformer, interceptor,
-        config = {rootName: 'test', rootPluralName: 'tests'};
+        config = {config: {name: 'test', pluralName: 'tests'}};
 
 
     function testTransform(wrappedData, unwrappedData) {
