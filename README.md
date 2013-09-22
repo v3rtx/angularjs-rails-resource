@@ -24,13 +24,14 @@ Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes betwee
 ## Installation
 
 Add this line to your application's Gemfile:
-
+```ruby
     gem 'angularjs-rails-resource', '~> 1.0.0'
+```
 
 Include the javascript somewhere in your asset pipeline:
-
-    //= require angularjs/rails/resource
-
+```javascript
+//= require angularjs/rails/resource
+```
 
 ## Dependencies
 Since this is an [AngularJS](http://angularjs.org) module it of course depends on that but more specifically the it depends on the following AngularJS services:
@@ -49,68 +50,68 @@ at [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-t
 
 ### Basic Example
 In order to create a Book resource, we would first define the factory within a module.
-
-    angular.module('book.services', ['rails']);
-    angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-        return railsResourceFactory({url: '/books', name: 'book'});
-    }]);
-
+```javascript
+angular.module('book.services', ['rails']);
+angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
+    return railsResourceFactory({url: '/books', name: 'book'});
+}]);
+```
 We would then inject that service into a controller:
+```javascript
+angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
+    $scope.searching = true;
+    // Find all books matching the title
+    $scope.books = Book.query({title: title});
+    $scope.books.then(function(results) {
+        $scope.searching = false;
+    }, function (error) {
+        $scope.searching = false;
+    });
 
-    angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
-        $scope.searching = true;
-        // Find all books matching the title
-        $scope.books = Book.query({title: title});
-        $scope.books.then(function(results) {
-            $scope.searching = false;
-        }, function (error) {
-            $scope.searching = false;
-        });
+    // Find a single book and update it
+    Book.get(1234).then(function (book) {
+        book.lastViewed = new Date();
+        book.update();
+    });
 
-        // Find a single book and update it
-        Book.get(1234).then(function (book) {
-            book.lastViewed = new Date();
-            book.update();
-        });
-
-        // Create a book and save it
-        new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
-    }]);
-
+    // Create a book and save it
+    new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
+}]);
+```
 ### Serializer
 When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option.
-
-    Author = railsResourceFactory({
-        url: '/authors',
-        name: 'author',
-        serializer: railsSerializer(function () {
-            this.exclude('birthDate', 'books');
-            this.nestedAttribute('books');
-            this.resource('books', 'Book');
-        })
-    });
-
+```javascript
+Author = railsResourceFactory({
+    url: '/authors',
+    name: 'author',
+    serializer: railsSerializer(function () {
+        this.exclude('birthDate', 'books');
+        this.nestedAttribute('books');
+        this.resource('books', 'Book');
+    })
+});
+```
 You can also specify a serializer as a factory and inject it as a dependency.
-
-    angular.module('rails').factory('BookSerializer', function(railsSerializer) {
-        return railsSerializer(function () {
-            this.exclude('publicationDate', 'relatedBooks');
-            this.rename('ISBN', 'isbn');
-            this.nestedAttribute('chapters', 'notes');
-            this.serializeWith('chapters', 'ChapterSerializer');
-            this.add('numChapters', function (book) {
-                return book.chapters.length;
-            });
+```javascript
+angular.module('rails').factory('BookSerializer', function(railsSerializer) {
+    return railsSerializer(function () {
+        this.exclude('publicationDate', 'relatedBooks');
+        this.rename('ISBN', 'isbn');
+        this.nestedAttribute('chapters', 'notes');
+        this.serializeWith('chapters', 'ChapterSerializer');
+        this.add('numChapters', function (book) {
+            return book.chapters.length;
         });
     });
+});
 
-    Book = railsResourceFactory({
-        url: '/books',
-        name: 'book',
-        serializer: 'BookSerializer'
-    });
+Book = railsResourceFactory({
+    url: '/books',
+    name: 'book',
+    serializer: 'BookSerializer'
+});
 
-
+```
 ## Resource Creation
 Creating a resource using this factory is similar to using $resource, you just call <code>railsResourceFactory</code> with the config options and it returns a new resource function.
 The resource function serves two purposes.  First is that you can use (or define new) "class" methods directly accessible such as query and get to retrieve
@@ -167,11 +168,13 @@ The URL can be specified as one of three ways:
 
  3. AngularJS expression - An expression url is evaluated at run time based on the given context for non-instance methods or the instance itself. For example, given the url expression: /stores/{{storeId}}/items/{{id}}
 
-        Item.query({category: 'Software'}, {storeId: 123}) would generate a GET to /stores/1234/items?category=Software
-        Item.get({storeId: 123, id: 1}) would generate a GET to /stores/123/items/1
+```javascript
+Item.query({category: 'Software'}, {storeId: 123}) // would generate a GET to /stores/1234/items?category=Software
+Item.get({storeId: 123, id: 1}) // would generate a GET to /stores/123/items/1
 
-        new Item({store: 123}).create() would generate a POST to /stores/123/items
-        new Item({id: 1, storeId: 123}).update() would generate a PUT to /stores/123/items/1
+new Item({store: 123}).create() // would generate a POST to /stores/123/items
+new Item({id: 1, storeId: 123}).update() // would generate a PUT to /stores/123/items/1
+```
 
 ## Promises
 [$http documentation](http://docs.angularjs.org/api/ng.$http) describes the promise data very well so I highly recommend reading that.
@@ -198,7 +201,7 @@ Resources created using <code>railsResourceFactory</code> have the following cla
     * **context** {*} (optional) - A context object that is used during url evaluation to resolve expression variables
     * **returns** {promise} - A promise that will be resolved with an array of new Resource instances
 
-* get(context) - Executs a GET request against the resource's url (e.g. /books/1234).
+* get(context) - Executes a GET request against the resource's url (e.g. /books/1234).
     * **context** {*} - A context object that is used during url evaluation to resolve expression variables.  If you are using a basic url this can be an id number to append to the url.
     * **returns** {promise} A promise that will be resolved with a new instance of the Resource
 
