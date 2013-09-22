@@ -381,6 +381,17 @@ describe('railsResourceFactory', function () {
             expect(test).toEqualData({id: 123, abcDef: "T"});
         });
 
+        it('should allow changing urls after first operation', function () {
+            $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+            Test.get(123);
+            $httpBackend.flush();
+
+            $httpBackend.expectGET('/test2/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+            Test.config.url = '/test2';
+            Test.get(123);
+            $httpBackend.flush();
+        });
+
         angular.forEach(['post', 'put', 'patch'], function (method) {
             it('should be able to ' + method + ' to arbitrary url', inject(function($httpBackend) {
                 var promise, result = {};

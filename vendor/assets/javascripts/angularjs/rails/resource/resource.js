@@ -59,6 +59,8 @@
             function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
             function railsResourceFactory(config) {
+                var previousUrl;
+
                 function appendPath(url, path) {
                     if (path) {
                         if (path[0] !== '/') {
@@ -128,8 +130,9 @@
                 };
 
                 RailsResource.buildUrl = function (context) {
-                    if (!RailsResource.config.urlBuilder) {
+                    if (!RailsResource.config.urlBuilder || RailsResource.config.url !== previousUrl) {
                         RailsResource.config.urlBuilder = railsUrlBuilder(RailsResource.config.url);
+                        previousUrl = RailsResource.config.url;
                     }
 
                     return RailsResource.config.urlBuilder(context);
