@@ -25,7 +25,7 @@ Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes betwee
 
 Add this line to your application's Gemfile:
 ```ruby
-    gem 'angularjs-rails-resource', '~> 1.0.0'
+gem 'angularjs-rails-resource', '~> 1.0.0'
 ```
 
 Include the javascript somewhere in your asset pipeline:
