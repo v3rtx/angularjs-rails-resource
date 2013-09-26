@@ -1,13 +1,9 @@
 /**
  * A resource factory inspired by $resource from AngularJS
- * @version v0.2.2 - 2013-08-12
+ * @version v0.2.2 - 2013-09-26
  * @link https://github.com/FineLinePrototyping/angularjs-rails-resource.git
  * @author 
  */
-//= require_self
-//= require_tree ./utils
-//= require ./serialization
-//= require ./resource
 
 (function (undefined) {
     angular.module('rails', ['ng']);
