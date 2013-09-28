@@ -124,9 +124,9 @@
                     this.config.defaultParams = cfg.defaultParams || defaultOptions.defaultParams;
                     this.config.updateMethod = (cfg.updateMethod || defaultOptions.updateMethod).toLowerCase();
 
-                    this.config.requestTransformers = cfg.requestTransformers || [];
-                    this.config.responseInterceptors = cfg.responseInterceptors || [];
-                    this.config.afterResponseInterceptors = cfg.afterResponseInterceptors || [];
+                    this.config.requestTransformers = cfg.requestTransformers ? cfg.requestTransformers.slice(0) : [];
+                    this.config.responseInterceptors = cfg.responseInterceptors ? cfg.responseInterceptors.slice(0) : [];
+                    this.config.afterResponseInterceptors = cfg.afterResponseInterceptors ? cfg.afterResponseInterceptors.slice(0) : [];
 
                     // strings and functions are not considered objects by angular.isObject()
                     if (angular.isObject(cfg.serializer)) {
