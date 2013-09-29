@@ -11,6 +11,10 @@
     - <code>enableRootWrapping</code> was renamed <code>rootWrapping</code>
     - <code>rootName</code> was renamed <code>name</code>
     - <code>rootPluralName</code> was renamed <code>pluralName</code>
+<a name="0.2.3"></a>
+# 0.2.3
+## Bug Fixes
+- Issue #67 incorrect date deserialization led to errors constructing a new resource with a property that was type Date
 
 <a name="0.2.2"></a>
 # 0.2.2

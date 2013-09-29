@@ -26,7 +26,12 @@ module.exports = function(grunt) {
       },
       dist: {
         src: srcFiles,
-        dest: '<%= dirs.dest %>/<%= pkg.name %>.js'
+        dest: '<%= dirs.dest %>/<%= pkg.name %>.js',
+        options: {
+          process: function(src, filepath) {
+            return src.replace(/^\/\/= require.*\n/gm, '');
+          },
+        },
       }
     },
     zip: {
