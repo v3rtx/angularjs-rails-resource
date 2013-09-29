@@ -1,3 +1,8 @@
+<a name="0.2.3"></a>
+# 0.2.3
+## Bug Fixes
+- Issue #67 incorrect date deserialization led to errors constructing a new resource with a property that was type Date
+
 <a name="0.2.2"></a>
 # 0.2.2
 ## Bug Fixes

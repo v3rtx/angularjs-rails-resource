@@ -1,6 +1,6 @@
 /**
  * A resource factory inspired by $resource from AngularJS
- * @version v0.2.2 - 2013-09-26
+ * @version v0.2.3 - 2013-09-28
  * @link https://github.com/FineLinePrototyping/angularjs-rails-resource.git
  * @author 
  */
@@ -581,6 +581,10 @@
                             result.push(self.deserializeValue(value, Resource));
                         });
                     } else if (angular.isObject(data)) {
+                        if (angular.isDate(data)) {
+                            return data;
+                        }
+
                         result = {};
 
                         if (Resource) {
