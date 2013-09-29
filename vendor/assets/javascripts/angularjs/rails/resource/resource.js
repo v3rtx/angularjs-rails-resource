@@ -27,7 +27,7 @@
         };
     });
 
-    angular.module('rails').provider('railsResourceFactory', function () {
+    angular.module('rails').provider('RailsResource', function () {
         var defaultOptions = {
             rootWrapping: true,
             updateMethod: 'put',
@@ -58,7 +58,6 @@
         this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
             function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
-            function railsResourceFactory(config) {
                 var previousUrl;
 
                 function appendPath(url, path) {
@@ -90,30 +89,46 @@
                 function RailsResource(value) {
                     var instance = this;
                     if (value) {
-                        var immediatePromise = function(data) {
+                        var immediatePromise = function (data) {
                             return {
                                 resource: RailsResource,
                                 context: instance,
                                 response: data,
-                                then: function(callback) {
+                                then: function (callback) {
                                     this.response = callback(this.response, this.resource, this.context);
                                     return immediatePromise(this.response);
                                 }
                             }
                         };
 
-                        var data = RailsResource.callInterceptors(immediatePromise({data: value}), this).response.data;
+                        var data = this.constructor.callInterceptors(immediatePromise({data: value}), this).response.data;
                         angular.extend(this, data);
                     }
                 }
 
-                // allow calling resource factory with no options for inherited resource scenarios
-                RailsResource.configure = function(cfg) {
+                RailsResource.extend = function (child) {
+                    // Extend logic copied from CoffeeScript generated code
+                    var __hasProp = {}.hasOwnProperty, parent = this;
+                    for (var key in parent) {
+                        if (__hasProp.call(parent, key)) child[key] = parent[key];
+                    }
+
+                    function ctor() {
+                        this.constructor = child;
+                    }
+
+                    ctor.prototype = parent.prototype;
+                    child.prototype = new ctor();
+                    child.__super__ = parent.prototype;
+                    return child;
+                };
+
+                // allow calling configure multiple times to set configuration options and override values from inherited resources
+                RailsResource.configure = function (cfg) {
                     cfg = cfg || {};
 
                     if (this.config) {
                         cfg = angular.extend({}, this.config, cfg);
-
                     }
 
                     this.config = {};
@@ -141,10 +156,10 @@
                     this.config.urlBuilder = cfg.urlBuilder;
                     this.config.resourceConstructor = this;
                 };
-                
-                RailsResource.configure(config);
-                
-                RailsResource.setUrl = function(url) {
+
+                RailsResource.configure({});
+
+                RailsResource.setUrl = function (url) {
                     this.config.url = url;
                 };
 
@@ -162,10 +177,10 @@
                  *      constructor is the resource class calling the function,
                  *      context is the resource instance of the calling method (create, update, delete) or undefined if the method was a class method (get, query)
                  */
-                RailsResource.beforeResponse = function(fn) {
+                RailsResource.beforeResponse = function (fn) {
                     fn = RailsResourceInjector.getDependency(fn);
-                    this.config.responseInterceptors.push(function(promise) {
-                        return promise.then(function(response) {
+                    this.config.responseInterceptors.push(function (promise) {
+                        return promise.then(function (response) {
                             fn(response.data, promise.resource.config.resourceConstructor, promise.context);
                             return response;
                         });
@@ -176,10 +191,10 @@
                  * Add a callback to run after response has been processed.  These callbacks are not called on object construction.
                  * @param fn(response data, constructor) - response data is either the resource instance returned or an array of resource instances and constructor is the resource class calling the function
                  */
-                RailsResource.afterResponse = function(fn) {
+                RailsResource.afterResponse = function (fn) {
                     fn = RailsResourceInjector.getDependency(fn);
-                    this.config.afterResponseInterceptors.push(function(promise) {
-                        return promise.then(function(response) {
+                    this.config.afterResponseInterceptors.push(function (promise) {
+                        return promise.then(function (response) {
                             fn(response, promise.resource.config.resourceConstructor);
                             return response;
                         });
@@ -190,16 +205,16 @@
                  * Adds a function to run after serializing the data to send to the server, but before root-wrapping it.
                  * @param fn (data, constructor) - data object is the serialized resource instance, and constructor the resource class calling the function
                  */
-                RailsResource.beforeRequest = function(fn) {
+                RailsResource.beforeRequest = function (fn) {
                     fn = RailsResourceInjector.getDependency(fn);
-                    this.config.requestTransformers.push(function(data, resource) {
+                    this.config.requestTransformers.push(function (data, resource) {
                         return fn(data, resource.config.resourceConstructor) || data;
                     });
                 };
 
                 // transform data for request:
                 RailsResource.transformData = function (data) {
-                    var transformer, config = this.config;
+                    var config = this.config;
                     data = config.serializer.serialize(data);
 
                     forEachDependency(this.config.requestTransformers, function (transformer) {
@@ -328,7 +343,7 @@
                  * @param path {string} (optional) An additional path to append to the URL
                  * @returns {string} The URL for the resource
                  */
-                RailsResource.prototype.$url = function(path) {
+                RailsResource.prototype.$url = function (path) {
                     return appendPath(this.constructor.resourceUrl(this), path);
                 };
 
@@ -400,9 +415,21 @@
                 };
 
                 return RailsResource;
+            }];
+    });
+
+    angular.module('rails').factory('railsResourceFactory', ['RailsResource', function (RailsResource) {
+        return function (config) {
+            function Resource() {
+                _ref = Resource.__super__.constructor.apply(this, arguments);
+                return _ref;
             }
 
-            return railsResourceFactory;
-        }];
-     });
+            RailsResource.extend(Resource);
+            Resource.configure(config);
+
+            return Resource;
+        }
+    }]);
+
 }());

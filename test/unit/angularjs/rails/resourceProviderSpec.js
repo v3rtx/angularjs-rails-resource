@@ -2,8 +2,8 @@ describe('resource provider factory config', function () {
     'use strict';
 
     it('should allow disabling root wrapping globally', function () {
-        module('rails', function (railsResourceFactoryProvider) {
-            expect(railsResourceFactoryProvider.rootWrapping(false)).toBe(railsResourceFactoryProvider);
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.rootWrapping(false)).toBe(RailsResourceProvider);
         });
 
         inject(function (railsResourceFactory) {
@@ -12,8 +12,8 @@ describe('resource provider factory config', function () {
     });
 
     it('should allow setting updateMethod globally', function () {
-        module('rails', function (railsResourceFactoryProvider) {
-            expect(railsResourceFactoryProvider.updateMethod('patch')).toBe(railsResourceFactoryProvider);
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.updateMethod('patch')).toBe(RailsResourceProvider);
         });
 
         inject(function (railsResourceFactory) {
@@ -22,8 +22,8 @@ describe('resource provider factory config', function () {
     });
 
     it('should allow setting http headers options globally', function () {
-        module('rails', function (railsResourceFactoryProvider) {
-            expect(railsResourceFactoryProvider.httpConfig({headers: {'test': "header"}})).toBe(railsResourceFactoryProvider);
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.httpConfig({headers: {'test': "header"}})).toBe(RailsResourceProvider);
         });
 
         inject(function (railsResourceFactory) {
@@ -32,8 +32,8 @@ describe('resource provider factory config', function () {
     });
 
     it('should allow setting default query parameters options globally', function () {
-        module('rails', function (railsResourceFactoryProvider) {
-            expect(railsResourceFactoryProvider.defaultParams({'test': "1"})).toBe(railsResourceFactoryProvider);
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.defaultParams({'test': "1"})).toBe(RailsResourceProvider);
         });
 
         inject(function (railsResourceFactory) {
