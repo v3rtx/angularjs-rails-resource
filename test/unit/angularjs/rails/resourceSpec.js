@@ -381,6 +381,13 @@ describe('railsResourceFactory', function () {
             expect(test).toEqualData({id: 123, abcDef: "T"});
         });
 
+        it('should support constructing with date properties', function () {
+            var testDate = new Date(),
+                test = new Test({id: 123, testDate: testDate});
+
+            expect(test.testDate).toBe(testDate);
+        });
+
         angular.forEach(['post', 'put', 'patch'], function (method) {
             it('should be able to ' + method + ' to arbitrary url', inject(function($httpBackend) {
                 var promise, result = {};
