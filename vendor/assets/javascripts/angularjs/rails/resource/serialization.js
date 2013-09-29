@@ -436,6 +436,10 @@
                             result.push(self.deserializeValue(value, Resource));
                         });
                     } else if (angular.isObject(data)) {
+                        if (angular.isDate(data)) {
+                            return data;
+                        }
+
                         result = {};
 
                         if (Resource) {
