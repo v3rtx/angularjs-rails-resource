@@ -482,11 +482,7 @@ describe('railsResourceFactory', function () {
     });
 
     describe('subclassing', function() {
-        var $httpBackend, $rootScope, factory, Book,
-            config = {
-                url: '/test',
-                name: 'test'
-            },
+        var $httpBackend, $rootScope, factory, Book, CarManual,
             // generated CoffeeScript Code
             __hasProp = {}.hasOwnProperty,
             __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -501,19 +497,29 @@ describe('railsResourceFactory', function () {
             Book = (function(_super) {
               __extends(Book, _super);
 
-              Book.config.url = '/books';
-
-              Book.config.name = 'book';
-
-              Book.config.resourceConstructor = Book;
+              // @configure url: '/books', name: 'book'
+              Book.configure({ url: '/books', name: 'book' });
 
               function Book() {
-                this.subclass = true;
+                  this.subclass = true;
               }
 
               return Book;
 
             })(railsResourceFactory());
+
+            CarManual = (function(_super) {
+                __extends(CarManual, _super);
+
+                CarManual.configure({ url: '/car_manuals', name: 'car_manual' });
+
+                function CarManual() {
+                    this.subclass = true;
+                }
+
+                return CarManual;
+
+            })(Book);
         }));
 
         afterEach(function() {
@@ -522,6 +528,23 @@ describe('railsResourceFactory', function () {
         });
 
         it('get should return resource instance of subclass', inject(function($httpBackend) {
+            var promise, result;
+
+            $httpBackend.expectGET('/car_manuals/123').respond(200, {car_manual: {id: 123, abc: 'xyz'}});
+
+            expect(promise = CarManual.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(CarManual);
+            expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
+        }));
+
+        it('should have configuration per-class', inject(function($httpBackend) {
             var promise, result;
 
             $httpBackend.expectGET('/books/123').respond(200, {book: {id: 123, abc: 'xyz'}});
