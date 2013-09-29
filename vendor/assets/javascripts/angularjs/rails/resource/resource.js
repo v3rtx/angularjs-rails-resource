@@ -391,7 +391,7 @@
 
                 RailsResource.prototype.isNew = function () {
                     return this.id == null;
-                }
+                };
 
                 RailsResource.prototype.save = function () {
                     if (this.isNew()) {
@@ -399,7 +399,7 @@
                     } else {
                         return this.update();
                     }
-                }
+                };
 
                 RailsResource['$delete'] = function (url) {
                     return this.processResponse($http['delete'](url, this.getHttpConfig()));
