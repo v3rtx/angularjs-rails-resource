@@ -387,7 +387,7 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             $httpBackend.expectGET('/test2/123').respond(200, {test: {id: 123, abc: 'xyz'}});
-            Test.configure({url: '/test2'});
+            Test.setUrl('/test2');
             Test.get(123);
             $httpBackend.flush();
         });

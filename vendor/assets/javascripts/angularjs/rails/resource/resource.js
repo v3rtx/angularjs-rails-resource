@@ -157,6 +157,10 @@
 
                 RailsResource.configure({});
 
+                RailsResource.setUrl = function (url) {
+                    this.configure({url: url});
+                };
+
                 RailsResource.buildUrl = function (context) {
                     return this.config.urlBuilder(context);
                 };
