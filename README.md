@@ -3,20 +3,39 @@
 
 A resource factory inspired by $resource from AngularJS and [Misko's recommendation](http://stackoverflow.com/questions/11850025/recommended-way-of-getting-data-from-the-server).
 
-This library is not a drop in replacement for $resource.  There are significant differences that you should be aware of:
+## Differences from $resource
+This library is not a drop in replacement for $resource.  There are significant differences that you should be aware of and
 
-*  <code>get</code> and <code>query</code> return $q promises, not an instance or array that will be populated.  To gain access to the results you
+1.  <code>get</code> and <code>query</code> return [$q promises](http://docs.angularjs.org/api/ng.$q), not an instance or array that will be populated.  To gain access to the results you
 should use the promise <code>then</code> function.
-*  By default we perform root wrapping and unwrapping (if wrapped) when communicating with the server.
-*  By default we convert object key names underscored to camel case.
+2.  By default we perform root wrapping and unwrapping (if wrapped) when communicating with the server.
+3.  By default we convert attribute names between underscore and camel case.
 
-In case you are unfamiliar, the intent of the resource is to behave a bit like a remote model object.  One of the nice things about AngularJS
- is that it does not require you to create specific models for all of your data which gives you a lot of freedom for treating model data as basic
- javascript objects.  However, on the Rails side when exposing models to a javascript application you are likely going to follow the same pattern for multiple
- models where you will have a controller that has your basic index (query), get, create, update, delete functionality.
+## FAQs
+1. How come I can't iterate the array returned from query?
+We don't return an array.  We return promises not arrays or objects that get filled in later.
 
-The resource object created by this factory simplifies access to those models by exposing a mix of "class" methods (query, get) and
- "instance" methods (create, update, delete/remove).
+If you need access to the array in your JS code you can use the promise <code>then</code> function:
+````javascript
+Book.query({title: 'Moby Dick'}).then(function (books) {
+    $scope.books = books;
+});
+````
+
+2. I like underscores, how can I turn off the name conversion?
+You can inject the <code>railsSerializerProvider</code> into your application config function and override the <code>underscore</code>
+and <code>camelize</code> functions:
+````javascript
+angular.module('app').config(function (railsSerializerFactory) {
+    railsSerializerProvider.
+        underscore(function (name) {
+            return name;
+        }).
+        camelize(function (name) {
+            return name;
+        });
+});
+````
 
 ## Changes
 Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
@@ -44,8 +63,7 @@ Since this is an [AngularJS](http://angularjs.org) module it of course depends o
 ## Usage
 There are a lot of different ways that you can use the resources and we try not to force you into any specific pattern
 
-There are more examples available in [EXAMPLES.md](EXAMPLES.md). We also published a complete working example (including the rails side)
-at [Employee Training Tracker](https://github.com/FineLinePrototyping/employee-training-tracker) application.
+There are more examples available in [EXAMPLES.md](EXAMPLES.md).
 
 
 ### Basic Example
@@ -78,6 +96,7 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
     new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
 }]);
 ```
+
 ### Serializer
 When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option.
 ```javascript
@@ -113,27 +132,58 @@ Book = railsResourceFactory({
 
 ```
 ## Resource Creation
-Creating a resource using this factory is similar to using $resource, you just call <code>railsResourceFactory</code> with the config options and it returns a new resource function.
-The resource function serves two purposes.  First is that you can use (or define new) "class" methods directly accessible such as query and get to retrieve
-instances from the backend rails service.  The second is that it allows you to use it as a constructor to create new instances of that resource giving you access
-to create, update, and delete instance methods (or any others you add).
+There are multiple ways that you can set up new resources in your application.
 
+### railsResourceFactory
+Similar to $resource, we provide a <code>railsResourceFactory(config)</code> function that takes a config object with the configuration
+settings for the new resource.  The factory function returns a new class that is extended from RailsResource.
+
+### RailsResource extension
+We also expose the RailsResource as base class that you can extend to create your own resource classes.  Extending the RailsResource class
+directly gives you a bit more flexibility to add custom constructor code.  There are probably ten different ways to extend the class but
+the two that we intend to be used are through CoffeeScript or through the same logic that the factory function uses.
+
+#### CoffeeScript
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book'
+
+class Encyclopedia extends Book
+  @configure url: '/encyclopedias', name: 'encyclopedia'
+````
+
+#### JavaScript
+Since the purpose of exposing the RailsResource was to allow for CoffeeScript users to create classes from it the JavaScript way
+is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extend</code> function is a modification
+of the <code>__extends</code> function that CoffeeScript generates.
+
+````javascript
+function Resource() {
+    _ref = Resource.__super__.constructor.apply(this, arguments);
+    return _ref;
+}
+
+RailsResource.extend(Resource);
+Resource.configure(config);
+````
 
 ### Config Options
-The following options are available for the config object passed to the factory function.  Each of the config options is accessible on the generated resource from the <code>config</code> property.
+
+The following configuration options are available for customizing resources.  Each of the configuration options can be passed as part of an object
+to the <code>railsResourceFactory</code> function or to the resource's <code>configure</code> function.
 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
  * **rootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
  * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers) method is used to calculate
         the plural name from the singular name.
- * **resourceConstructor** *(optional)* - Overrides the constructor used when deserializing data from the server.  This is useful for subclassing techniques and should work with CoffeeScript classes.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
          * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
+ * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) allow configuring custom serialization options.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -142,7 +192,7 @@ The following options are available for the config object passed to the factory 
 For example, you should specify "publishingCompany" and "publishingCompanies" instead of "publishing_company" and "publishing_companies".
 
 ### Provider Configuration
-<code>railsResourceFactory</code> can be injected as <code>railsResourceFactoryProvider</code> into your app's config method to configure defaults for all the resources application-wide.
+<code>RailsResource</code> can be injected as <code>RailsResourceProvider</code> into your app's config method to configure defaults for all the resources application-wide.
 The individual resource configuration takes precedence over application-wide default configuration values.
 Each configuration option listed is exposed as a method on the provider that takes the configuration value as the parameter and returns the provider to allow method chaining.
 
@@ -154,8 +204,8 @@ Each configuration option listed is exposed as a method on the provider that tak
 For example, to turn off the root wrapping application-wide and set the update method to PATCH:
 
 ````javascript
-app.config(function (railsResourceFactoryProvider) {
-    railsResourceFactoryProvider.rootWrapping(false).updateMethod('patch');
+app.config(function (RailsResourceProvider) {
+    RailsResourceProvider.rootWrapping(false).updateMethod('patch');
 );
 ````
 
@@ -185,11 +235,15 @@ that if response.data is reassigned that there's still a pointer to the original
 
 
 ## Resource Methods
-Resources created using <code>railsResourceFactory</code> have the following class and instance methods available.
+RailsResources have the following class methods available.
 
 ### Class Methods
 * Constructor(data) - The Resource object can act as a constructor function for use with the JavaScript <code>new</code> keyword.
     * **data** {object} (optional) - Optional data to set on the new instance
+
+* configure(options) - Change one or more configuration option for a resource.
+
+* setUrl(url) - Updates the url for the resource, same as calling <code>configure({url: url})</code>
 
 * $url(context, path) - Returns the resource URL using the given context with the optional path appended if provided.
     * **context** {*} - The context to use when building the url.  See [Resource URLs](#resource-urls) above for more information.
@@ -315,14 +369,6 @@ Each configuration option listed is exposed as a method on the provider that tak
 * pluralize - {function(fn):railsSerializerProvider}
 * exclusionMatchers - {function(matchers):railsSerializerProvider}
 
-For example, to turn off the key renaming from underscore to camel case and vice versa you would do:
-
-````javascript
-app.config(function (railsSerializerProvider) {
-    railsSerializerProvider.underscore(function (value) { return value; })
-        .camelize(function (value) { return value; });
-);
-````
 
 #### Customization API
 The customizer function passed to the railsSerializer has available to it the following methods for altering the serialization of an object.  None of these methods support nested attribute names (e.g. <code>'books.publicationDate'</code>), in order to customize the serialization of the <code>books</code> objects you would need to specify a custom serializer for the <code>books</code> attribute.

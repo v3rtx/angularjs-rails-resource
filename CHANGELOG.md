@@ -3,14 +3,17 @@
 ## Bug Fixes
 
 ## Features
-- Added configuration option <code>resourceConstructor</code> to specify a custom constructor function to allow constructing inherited types.
+- Added <code>configure</code> to allow changing configuration options after the resource has been initially configured.
 
 ## Breaking Changes
+- <code>railsResourceFactoryProvider</code> settings have been moved to <code>RailsResourceProvider</code>
 - <code>wrapData</code> config option has been renamed <code>rootWrapping</code>
-- All config settings are now stored under the <code>config</code> property on the resource to allow inherited resources to change options.
+- All resource settings are now stored under the <code>config</code> property on the resource and should be modified using the <code>configure</code> function.
+- The following resource settings have been renamed:
     - <code>enableRootWrapping</code> was renamed <code>rootWrapping</code>
     - <code>rootName</code> was renamed <code>name</code>
     - <code>rootPluralName</code> was renamed <code>pluralName</code>
+
 <a name="0.2.3"></a>
 # 0.2.3
 ## Bug Fixes
