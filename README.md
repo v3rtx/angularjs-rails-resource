@@ -12,7 +12,7 @@ should use the promise <code>then</code> function.
 3.  By default we convert attribute names between underscore and camel case.
 
 ## FAQs
-1. How come I can't iterate the array returned from query?
+### How come I can't iterate the array returned from query?
 We don't return an array.  We return promises not arrays or objects that get filled in later.
 
 If you need access to the array in your JS code you can use the promise <code>then</code> function:
@@ -22,7 +22,7 @@ Book.query({title: 'Moby Dick'}).then(function (books) {
 });
 ````
 
-2. I like underscores, how can I turn off the name conversion?
+### I like underscores, how can I turn off the name conversion?
 You can inject the <code>railsSerializerProvider</code> into your application config function and override the <code>underscore</code>
 and <code>camelize</code> functions:
 ````javascript
