@@ -58,8 +58,6 @@
         this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
             function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
-                var previousUrl;
-
                 function appendPath(url, path) {
                     if (path) {
                         if (path[0] !== '/') {
@@ -153,21 +151,13 @@
                     this.config.name = this.config.serializer.underscore(cfg.name);
                     this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
 
-                    this.config.urlBuilder = cfg.urlBuilder;
+                    this.config.urlBuilder = railsUrlBuilder(this.config.url);
                     this.config.resourceConstructor = this;
                 };
 
                 RailsResource.configure({});
 
-                RailsResource.setUrl = function (url) {
-                    this.config.url = url;
-                };
-
                 RailsResource.buildUrl = function (context) {
-                    if (!this.config.urlBuilder || this.config.url !== previousUrl) {
-                        this.config.urlBuilder = railsUrlBuilder(this.config.url);
-                        previousUrl = this.config.url;
-                    }
                     return this.config.urlBuilder(context);
                 };
 
