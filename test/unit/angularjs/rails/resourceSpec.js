@@ -489,16 +489,15 @@ describe('railsResourceFactory', function () {
     });
 
     describe('subclassing', function() {
-        var $httpBackend, $rootScope, factory, Book, CarManual,
+        var $httpBackend, $rootScope, Book, CarManual,
             // generated CoffeeScript Code
             __hasProp = {}.hasOwnProperty,
             __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 
-        beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory) {
+        beforeEach(inject(function (_$httpBackend_, _$rootScope_, RailsResource) {
             $httpBackend = _$httpBackend_;
             $rootScope = _$rootScope_;
-            factory = railsResourceFactory;
 
             // generated CoffeeScript Code
             Book = (function(_super) {
@@ -508,12 +507,13 @@ describe('railsResourceFactory', function () {
               Book.configure({ url: '/books', name: 'book' });
 
               function Book() {
+                  Book.__super__.constructor.apply(this, arguments);
                   this.subclass = true;
               }
 
               return Book;
 
-            })(railsResourceFactory());
+            })(RailsResource);
 
             CarManual = (function(_super) {
                 __extends(CarManual, _super);
@@ -521,6 +521,7 @@ describe('railsResourceFactory', function () {
                 CarManual.configure({ url: '/car_manuals', name: 'car_manual' });
 
                 function CarManual() {
+                    CarManual.__super__.constructor.apply(this, arguments);
                     this.subclass = true;
                 }
 
@@ -534,7 +535,7 @@ describe('railsResourceFactory', function () {
             $httpBackend.verifyNoOutstandingRequest();
         });
 
-        it('get should return resource instance of subclass', inject(function($httpBackend) {
+        it('get should return resource instance of subclass', function() {
             var promise, result;
 
             $httpBackend.expectGET('/car_manuals/123').respond(200, {car_manual: {id: 123, abc: 'xyz'}});
@@ -549,9 +550,9 @@ describe('railsResourceFactory', function () {
 
             expect(result).toBeInstanceOf(CarManual);
             expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
-        }));
+        });
 
-        it('should have configuration per-class', inject(function($httpBackend) {
+        it('should have configuration per-class', function() {
             var promise, result;
 
             $httpBackend.expectGET('/books/123').respond(200, {book: {id: 123, abc: 'xyz'}});
@@ -566,6 +567,12 @@ describe('railsResourceFactory', function () {
 
             expect(result).toBeInstanceOf(Book);
             expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
-        }));
+        });
+
+        it('should allow constructing subclasses with data', function () {
+            var carManual = new CarManual({id: 1, name: 'Honda CR-V'});
+            expect(carManual.id).toBe(1);
+            expect(carManual.name).toBe('Honda CR-V');
+        });
     });
 });
