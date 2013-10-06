@@ -212,6 +212,22 @@ describe('RailsResource.snapshots', function () {
         expect(book.$snapshots.length).toBe(0);
     });
 
+    it('should be able to save after rollback', function () {
+        var book, data = {$key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        book.snapshot();
+        book.$key = '1235';
+        book.rollback();
+
+        $httpBackend.expectPOST('/books').respond(200, {book: {id: 1}});
+        book.save();
+        $httpBackend.flush();
+
+        expect(book.$key).toBe('1234');
+        expect(book.$snapshots).toBeDefined();
+        expect(book.$snapshots.length).toBe(0);
+    });
+
     it('should reset snapshots on update', function () {
         var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
         book = new Book(data);
