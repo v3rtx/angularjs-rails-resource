@@ -58,34 +58,10 @@
         this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
             function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
 
-                function appendPath(url, path) {
-                    if (path) {
-                        if (path[0] !== '/') {
-                            url += '/';
-                        }
-
-                        url += path;
-                    }
-
-                    return url;
-                }
-
-                function forEachDependency(list, callback) {
-                    var dependency;
-
-                    for (var i = 0, len = list.length; i < len; i++) {
-                        dependency = list[i];
-
-                        if (angular.isString(dependency)) {
-                            dependency = list[i] = RailsResourceInjector.getDependency(dependency);
-                        }
-
-                        callback(dependency);
-                    }
-                }
-
                 function RailsResource(value) {
                     var instance = this;
+                    this.$snapshots = [];
+
                     if (value) {
                         var immediatePromise = function (data) {
                             return {
@@ -376,11 +352,11 @@
                 });
 
                 RailsResource.prototype.create = function () {
-                    return this.$post(this.$url(), this);
+                    return resetSnapshotsOnSuccess(this.$post(this.$url(), this));
                 };
 
                 RailsResource.prototype.update = function () {
-                    return this['$' + this.constructor.config.updateMethod](this.$url(), this);
+                    return resetSnapshotsOnSuccess(this['$' + this.constructor.config.updateMethod](this.$url(), this));
                 };
 
                 RailsResource.prototype.isNew = function () {
@@ -405,10 +381,95 @@
 
                 //using ['delete'] instead of .delete for IE7/8 compatibility
                 RailsResource.prototype.remove = RailsResource.prototype['delete'] = function () {
-                    return this.$delete(this.$url());
+                    return resetSnapshotsOnSuccess(this.$delete(this.$url()));
+                };
+
+                /**
+                 * Stores a copy of this resource in the $snapshots array to allow undoing changes.
+                 * @returns {Object} The copy being stored into $snapshots.
+                 */
+                RailsResource.prototype.snapshot = function () {
+                    var copy = angular.copy(this);
+                    // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
+                    // not to mention using more memory for each snapshot.
+                    delete copy.$snapshots;
+                    this.$snapshots.push(copy);
+                    return copy;
+                };
+
+                /**
+                 * Rolls back the resource to a previous snapshot.  All versions rolled back are removed from the stored
+                 * snapshots.
+                 *
+                 * When numVersions is undefined or 0 then a single version is rolled back.
+                 * When numVersions is -1 then the resource is rolled back to the first snapshot version.
+                 * When numVersions exceeds the stored number of snapshots then the resource is rolled back to the first snapshot version.
+                 *
+                 * @param {Number|undefined} numVersions The number of versions to roll back to.  If undefined then
+                 * @returns {Boolean} true if rollback was successful, false otherwise
+                 */
+                RailsResource.prototype.rollback = function (numVersions) {
+                    var versions,
+                        snapshots = this.$snapshots,
+                        snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
+
+                    numVersions = numVersions || 1;
+
+                    if (numVersions === -1) {
+                        numVersions = snapshotsLength;
+                    }
+
+                    numVersions = Math.min(numVersions, snapshotsLength);
+
+                    // if an invalid snapshot version was specified then don't attempt to do anything
+                    if (!angular.isArray(this.$snapshots) || !angular.isNumber(numVersions) || numVersions <= 0) {
+                        return false;
+                    }
+
+                    versions = this.$snapshots.splice(-numVersions);
+                    angular.copy(versions[0], this);
+                    // restore special variables
+                    this.$snapshots = snapshots;
+                    return true;
                 };
 
                 return RailsResource;
+
+                function resetSnapshotsOnSuccess(promise) {
+                    return promise.then(function (resource) {
+                        if (resource && resource.$snapshots) {
+                            resource.$snapshots.length = 0;
+                        }
+                        return resource;
+                    });
+                }
+
+                function appendPath(url, path) {
+                    if (path) {
+                        if (path[0] !== '/') {
+                            url += '/';
+                        }
+
+                        url += path;
+                    }
+
+                    return url;
+                }
+
+                function forEachDependency(list, callback) {
+                    var dependency;
+
+                    for (var i = 0, len = list.length; i < len; i++) {
+                        dependency = list[i];
+
+                        if (angular.isString(dependency)) {
+                            dependency = list[i] = RailsResourceInjector.getDependency(dependency);
+                        }
+
+                        callback(dependency);
+                    }
+                }
+
             }];
     });
 
