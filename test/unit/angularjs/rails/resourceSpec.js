@@ -381,6 +381,17 @@ describe('railsResourceFactory', function () {
             expect(test).toEqualData({id: 123, abcDef: "T"});
         });
 
+        it('should allow changing urls after first operation', function () {
+            $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+            Test.get(123);
+            $httpBackend.flush();
+
+            $httpBackend.expectGET('/test2/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+            Test.setUrl('/test2');
+            Test.get(123);
+            $httpBackend.flush();
+        });
+
         it('should support constructing with date properties', function () {
             var testDate = new Date(),
                 test = new Test({id: 123, testDate: testDate});
@@ -415,7 +426,6 @@ describe('railsResourceFactory', function () {
                 expect(test).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
             }));
         });
-
     });
 
     describe('plural', function() {
@@ -476,5 +486,93 @@ describe('railsResourceFactory', function () {
             expect(angular.isArray(result)).toBe(true);
             expect(result.length).toBe(0);
         }));
+    });
+
+    describe('subclassing', function() {
+        var $httpBackend, $rootScope, Book, CarManual,
+            // generated CoffeeScript Code
+            __hasProp = {}.hasOwnProperty,
+            __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+
+        beforeEach(inject(function (_$httpBackend_, _$rootScope_, RailsResource) {
+            $httpBackend = _$httpBackend_;
+            $rootScope = _$rootScope_;
+
+            // generated CoffeeScript Code
+            Book = (function(_super) {
+              __extends(Book, _super);
+
+              // @configure url: '/books', name: 'book'
+              Book.configure({ url: '/books', name: 'book' });
+
+              function Book() {
+                  Book.__super__.constructor.apply(this, arguments);
+                  this.subclass = true;
+              }
+
+              return Book;
+
+            })(RailsResource);
+
+            CarManual = (function(_super) {
+                __extends(CarManual, _super);
+
+                CarManual.configure({ url: '/car_manuals', name: 'car_manual' });
+
+                function CarManual() {
+                    CarManual.__super__.constructor.apply(this, arguments);
+                    this.subclass = true;
+                }
+
+                return CarManual;
+
+            })(Book);
+        }));
+
+        afterEach(function() {
+            $httpBackend.verifyNoOutstandingExpectation();
+            $httpBackend.verifyNoOutstandingRequest();
+        });
+
+        it('get should return resource instance of subclass', function() {
+            var promise, result;
+
+            $httpBackend.expectGET('/car_manuals/123').respond(200, {car_manual: {id: 123, abc: 'xyz'}});
+
+            expect(promise = CarManual.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(CarManual);
+            expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
+        });
+
+        it('should have configuration per-class', function() {
+            var promise, result;
+
+            $httpBackend.expectGET('/books/123').respond(200, {book: {id: 123, abc: 'xyz'}});
+
+            expect(promise = Book.get(123)).toBeDefined();
+
+            promise.then(function (response) {
+                result = response;
+            });
+
+            $httpBackend.flush();
+
+            expect(result).toBeInstanceOf(Book);
+            expect(result).toEqualData({id: 123, abc: 'xyz', subclass: true});
+        });
+
+        it('should allow constructing subclasses with data', function () {
+            var carManual = new CarManual({id: 1, name: 'Honda CR-V'});
+            expect(carManual.id).toBe(1);
+            expect(carManual.name).toBe('Honda CR-V');
+        });
     });
 });

@@ -33,7 +33,7 @@
         return function (url) {
             var expression;
 
-            if (angular.isFunction(url)) {
+            if (angular.isFunction(url) || angular.isUndefined(url)) {
                 return url;
             }
 

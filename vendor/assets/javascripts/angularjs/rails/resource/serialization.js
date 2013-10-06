@@ -207,7 +207,7 @@
                  * Specify a custom serializer to use for an attribute.
                  *
                  * @param attributeName {string} The name of the attribute
-                 * @param serializer {string | constructor} A reference to the custom serializer to use for the attribute.
+                 * @param serializer {string | function} A reference to the custom serializer to use for the attribute.
                  * @returns {Serializer} this for chaining support
                  */
                 Serializer.prototype.serializeWith = function (attributeName, serializer) {
@@ -331,7 +331,7 @@
                     if (serializer) {
                         return RailsResourceInjector.createService(serializer)
                     } else if (resource) {
-                        return resource.serializer;
+                        return resource.config.serializer;
                     }
 
                     return undefined;
@@ -443,7 +443,7 @@
                         result = {};
 
                         if (Resource) {
-                            result = new Resource();
+                            result = new Resource.config.resourceConstructor();
                         }
 
                         angular.forEach(data, function (value, key) {
