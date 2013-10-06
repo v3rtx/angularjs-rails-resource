@@ -164,8 +164,7 @@ of the <code>__extends</code> function that CoffeeScript generates.
 
 ````javascript
 function Resource() {
-    _ref = Resource.__super__.constructor.apply(this, arguments);
-    return _ref;
+    Resource.__super__.constructor.apply(this, arguments);
 }
 
 RailsResource.extend(Resource);

@@ -415,8 +415,7 @@
     angular.module('rails').factory('railsResourceFactory', ['RailsResource', function (RailsResource) {
         return function (config) {
             function Resource() {
-                _ref = Resource.__super__.constructor.apply(this, arguments);
-                return _ref;
+                Resource.__super__.constructor.apply(this, arguments);
             }
 
             RailsResource.extend(Resource);
