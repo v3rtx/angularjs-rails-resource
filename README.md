@@ -37,20 +37,25 @@ angular.module('app').config(function (railsSerializerFactory) {
 });
 ````
 
-## Changes
-Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
-
 ## Installation
-
-Add this line to your application's Gemfile:
+Add this line to your application's Gemfile to use the latest stable version:
 ```ruby
-gem 'angularjs-rails-resource', '~> 1.0.0'
+gem 'angularjs-rails-resource', '~> 0.2.3'
 ```
 
 Include the javascript somewhere in your asset pipeline:
 ```javascript
 //= require angularjs/rails/resource
 ```
+## Branching and Versioning
+As much as possible we will try to adhere to the [SemVer](http://semver.org/) guidelines on release numbering.
+
+The master branch may contain work in progress and should not be considered stable.
+
+Release branches should remain stable but it is always best to rely on the ruby gem release versions as the most stable versions.
+
+## Changes
+Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
 
 ## Dependencies
 Since this is an [AngularJS](http://angularjs.org) module it of course depends on that but more specifically the it depends on the following AngularJS services:
