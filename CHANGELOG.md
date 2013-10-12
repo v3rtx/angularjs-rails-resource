@@ -3,7 +3,8 @@
 ## Bug Fixes
 
 ## Features
-- Added <code>configure</code> to allow changing configuration options after the resource has been initially configured.
+- Added <code>configure</code> function to allow changing configuration options after the resource has been initially configured.
+- Added snapshot and rollback, be sure to check the [README](README.md#serializers) for details.
 
 ## Breaking Changes
 - <code>railsResourceFactoryProvider</code> settings have been moved to <code>RailsResourceProvider</code>

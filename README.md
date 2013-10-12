@@ -57,29 +57,60 @@ Release branches should remain stable but it is always best to rely on the ruby 
 ## Changes
 Make sure to check the [CHANGELOG](CHANGELOG.md) for any breaking changes between releases.
 
-## Dependencies
-Since this is an [AngularJS](http://angularjs.org) module it of course depends on that but more specifically the it depends on the following AngularJS services:
-
-* [$http](http://docs.angularjs.org/api/ng.$http)
-* [$q](http://docs.angularjs.org/api/ng.$q)
-* [$injector](http://docs.angularjs.org/api/AUTO.$injector)
-* [$interpolate](http://docs.angularjs.org/api/ng.$interpolate)
-
 ## Usage
-There are a lot of different ways that you can use the resources and we try not to force you into any specific pattern
+There are a lot of different ways that you can use the resources and we try not to force you into any specific pattern.
+All of the functionality is packed in an AngularJS module named "rails" so make sure that your modules depend on that module
+for the dependency injection to work properly.
 
 There are more examples available in [EXAMPLES.md](EXAMPLES.md).
 
+### Defining Resources
+There are multiple ways that you can set up define new resources in your application.
 
-### Basic Example
-In order to create a Book resource, we would first define the factory within a module.
+#### railsResourceFactory
+Similar to $resource, we provide a <code>railsResourceFactory(config)</code> function that takes a config object with the configuration
+settings for the new resource.  The factory function returns a new class that is extended from RailsResource.
+
 ```javascript
 angular.module('book.services', ['rails']);
 angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
     return railsResourceFactory({url: '/books', name: 'book'});
 }]);
 ```
-We would then inject that service into a controller:
+
+#### RailsResource extension
+We also expose the RailsResource as base class that you can extend to create your own resource classes.  Extending the RailsResource class
+directly gives you a bit more flexibility to add custom constructor code.  There are probably ten different ways to extend the class but
+the two that we intend to be used are through CoffeeScript or through the same logic that the factory function uses.
+
+##### CoffeeScript
+To allow better integration with CoffeeScript, we expose the RailsResource as a base class that can be extended to create
+resource classes.  When extending RailsResource you should use the <code>@configure</code> function call to set configuration
+properties for the resource.  You can call <code>@configure</code> multiple times to set additional properties as well.
+
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book'
+
+class Encyclopedia extends Book
+  @configure url: '/encyclopedias', name: 'encyclopedia'
+````
+
+##### JavaScript
+Since the purpose of exposing the RailsResource was to allow for CoffeeScript users to create classes from it the JavaScript way
+is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extend</code> function is a modification
+of the <code>__extends</code> function that CoffeeScript generates.
+
+````javascript
+function Resource() {
+    Resource.__super__.constructor.apply(this, arguments);
+}
+
+RailsResource.extend(Resource);
+Resource.configure(config);
+````
+
+### Using Resources
 ```javascript
 angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
     $scope.searching = true;
@@ -102,8 +133,9 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
 }]);
 ```
 
-### Serializer
-When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option.
+### Custom Serialization
+When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option to
+alter the behavior of the object serialization.
 ```javascript
 Author = railsResourceFactory({
     url: '/authors',
@@ -136,45 +168,13 @@ Book = railsResourceFactory({
 });
 
 ```
-## Resource Creation
-There are multiple ways that you can set up new resources in your application.
 
-### railsResourceFactory
-Similar to $resource, we provide a <code>railsResourceFactory(config)</code> function that takes a config object with the configuration
-settings for the new resource.  The factory function returns a new class that is extended from RailsResource.
-
-### RailsResource extension
-We also expose the RailsResource as base class that you can extend to create your own resource classes.  Extending the RailsResource class
-directly gives you a bit more flexibility to add custom constructor code.  There are probably ten different ways to extend the class but
-the two that we intend to be used are through CoffeeScript or through the same logic that the factory function uses.
-
-#### CoffeeScript
-````coffeescript
-class Book extends RailsResource
-  @configure url: '/books', name: 'book'
-
-class Encyclopedia extends Book
-  @configure url: '/encyclopedias', name: 'encyclopedia'
-````
-
-#### JavaScript
-Since the purpose of exposing the RailsResource was to allow for CoffeeScript users to create classes from it the JavaScript way
-is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extend</code> function is a modification
-of the <code>__extends</code> function that CoffeeScript generates.
-
-````javascript
-function Resource() {
-    Resource.__super__.constructor.apply(this, arguments);
-}
-
-RailsResource.extend(Resource);
-Resource.configure(config);
-````
 
 ### Config Options
 
 The following configuration options are available for customizing resources.  Each of the configuration options can be passed as part of an object
-to the <code>railsResourceFactory</code> function or to the resource's <code>configure</code> function.
+to the <code>railsResourceFactory</code> function or to the resource's <code>configure</code> function.  The <code>configure</code> function
+defined on the resource can be called multiple times to adjust properties as needed.
 
  * **url** - This is the url of the service.  See [Resource URLs](#resource-urls) below for more information.
  * **rootWrapping** - (Default: true) Turns on/off root wrapping on JSON (de)serialization.
@@ -187,7 +187,8 @@ to the <code>railsResourceFactory</code> function or to the resource's <code>con
          * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
- * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) allow configuring custom serialization options.
+ * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
+ * **snapshotSerializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options specific to snapshot and rollback.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -200,10 +201,10 @@ For example, you should specify "publishingCompany" and "publishingCompanies" in
 The individual resource configuration takes precedence over application-wide default configuration values.
 Each configuration option listed is exposed as a method on the provider that takes the configuration value as the parameter and returns the provider to allow method chaining.
 
-* rootWrapping - {function(boolean):railsSerializerProvider}
-* httpConfig - {function(object):railsSerializerProvider}
-* defaultParams - {function(object):railsSerializerProvider}
-* updateMethod - {function(boolean):railsSerializerProvider}
+* rootWrapping - {function(boolean):RailsResourceProvider}
+* httpConfig - {function(object):RailsResourceProvider}
+* defaultParams - {function(object):RailsResourceProvider}
+* updateMethod - {function(boolean):RailsResourceProvider}
 
 For example, to turn off the root wrapping application-wide and set the update method to PATCH:
 
@@ -321,6 +322,11 @@ All of the instance methods will update the instance in-place on response and wi
     * **customUrl** {string} - The url to DELETE to
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
+* snapshot(rollbackCallback) - Creates a snapshot of the current state of the resource.  See [Snapshots](#snapshots) for more details.
+
+* rollbackTo(version) - Rolls back the resource to specified snapshot version.  See [Snapshots](#snapshots) for more details.
+
+* rollback(numVersions) - Rolls back the resource the specified number of versions.  See [Snapshots](#snapshots) for more details.
 
 ## Serializers
 Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
@@ -440,6 +446,30 @@ has the following additional property:
 The resource also exposes a class method <code>afterResponse(fn)</code> that accepts a function to execute and automatically wraps it as an interceptor and appends it
 to the list of after response interceptors for the resource class.  Functions added with <code>afterResponse</code> don't need to know anything about promises since they are automatically wrapped
 as an interceptor.
+
+## Snapshots
+Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
+saved snapshots and yes, you can create as many snapshots as you want.
+
+Calling save, create, update, or delete/remove on a resource instance will remove all snapshots when the operation completes successfully.
+
+Snapshots serialize the resource instance and save off a copy of the serialized data in the <code>$snapshots</code> array on the instance.
+If you use a custom serialization options to control what is sent to the server you may want to consider whether or not you want to use
+different serialization options.  If so, you can specify an specific serializer for snapshots using the <code>snapshotSerializer</code> configuration
+option.
+
+### Creating Snapshots
+Creating a snapshot is easy, just call the <code>snapshot</code> function.  You can pass an optional callback function to <code>snapshot</code> to perform
+additional custom operations after the rollback is complete.   The callback function is specific to each snapshot version created so make sure you pass it every
+time if it's a callback you always want called.
+
+### Rolling back
+So you want to undo changes to the resource?  There are two methods you can use to roll back the resource to a previous snapshot version.
+
+The first method is <code>rollback</code> which takes an optional argument specifying the number of versions to roll back.  If the number of versions is not specified
+then a single version is rolled back.  To roll back all versions you can specify -1.
+
+The second method is <code>rollbackTo</code> which takes an argument of the version to roll back to.
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).
