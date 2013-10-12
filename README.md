@@ -85,7 +85,7 @@ the two that we intend to be used are through CoffeeScript or through the same l
 
 ##### CoffeeScript
 To allow better integration with CoffeeScript, we expose the RailsResource as a base class that can be extended to create
-resource classes.  When extending RailsResource you should use the <code>@configure</code> function call to set configuration
+resource classes.  When extending RailsResource you should use the <code>@configure</code> function to set configuration
 properties for the resource.  You can call <code>@configure</code> multiple times to set additional properties as well.
 
 ````coffeescript
@@ -188,7 +188,7 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
- * **snapshotSerializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options specific to snapshot and rollback.
+ * **snapshotSerializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options specific to [snapshot and rollback](#snapshots).
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -451,12 +451,14 @@ as an interceptor.
 Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
 saved snapshots and yes, you can create as many snapshots as you want.
 
-Calling save, create, update, or delete/remove on a resource instance will remove all snapshots when the operation completes successfully.
-
 Snapshots serialize the resource instance and save off a copy of the serialized data in the <code>$snapshots</code> array on the instance.
 If you use a custom serialization options to control what is sent to the server you may want to consider whether or not you want to use
 different serialization options.  If so, you can specify an specific serializer for snapshots using the <code>snapshotSerializer</code> configuration
 option.
+
+Calling <code>save</code>, <code>create</code>, <code>update</code>, or <code>delete</code>/<code>remove</code> on a resource instance
+will remove all snapshots when the operation completes successfully.
+
 
 ### Creating Snapshots
 Creating a snapshot is easy, just call the <code>snapshot</code> function.  You can pass an optional callback function to <code>snapshot</code> to perform
@@ -464,12 +466,27 @@ additional custom operations after the rollback is complete.   The callback func
 time if it's a callback you always want called.
 
 ### Rolling back
-So you want to undo changes to the resource?  There are two methods you can use to roll back the resource to a previous snapshot version.
+So you want to undo changes to the resource?  There are two methods you can use to roll back the resource to a previous snapshot version <code>rollback</code>
+and <code>rollbackTo</code>.  Each method will:
+ * Deserialize the snapshot data and update the resource instance with the new data.
+ * Remove all snapshots newer than the version being rolled back to.
+ * Call the rollback callback if it was specified on the <code>snapshot</code> in the context of the resource instance.
 
-The first method is <code>rollback</code> which takes an optional argument specifying the number of versions to roll back.  If the number of versions is not specified
-then a single version is rolled back.  To roll back all versions you can specify -1.
+#### rollback
+<code>rollback(numVersions)</code> allows you to roll back the resource.  If you do not specify <code>numVersions</code> then a resource is rolled back to the last
+snapshot version.  <code>numVersions</code> can be used to roll back further than the last snapshot version based on the following rules:
 
-The second method is <code>rollbackTo</code> which takes an argument of the version to roll back to.
+* When <code>numVersions</code> is undefined or 0 then a single version is rolled back.
+* When <code>numVersions</code> exceeds the stored number of snapshots then the resource is rolled back to the first snapshot version.
+* When <code>numVersions</code> is less than 0 then the resource is rolled back to the first snapshot version.
+* Otherwise, <code>numVersions</code> represents the nth version from the last snapshot version (similar to calling rollback <code>numVersions</code> times).
+
+#### rollbackTo
+<code>rollbackTo(snapshotVersion)</code> allows you to roll back the resource to a specific snapshot version.
+
+* When <code>snapshotVersion</code> is greater than the number of versions then the last snapshot version will be used.
+* When <code>snapshotVersion</code> is less than 0 then the resource will be rolled back to the first version.
+* Otherwise, the resource will be rolled back to the specific version specified.
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).
