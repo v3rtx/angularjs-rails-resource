@@ -1,13 +1,15 @@
 describe('RailsResource.snapshots', function () {
     'use strict';
-    var Book, $httpBackend;
+    var Book, $httpBackend, railsResourceFactory, railsSerializer;
 
     beforeEach(function () {
         module('rails')
     });
 
-    beforeEach(inject(function (_$httpBackend_, railsResourceFactory) {
+    beforeEach(inject(function (_$httpBackend_, _railsResourceFactory_, _railsSerializer_) {
         $httpBackend = _$httpBackend_;
+        railsResourceFactory = _railsResourceFactory_;
+        railsSerializer = _railsSerializer_;
         Book = railsResourceFactory({
             url: '/books',
             name: 'book'
@@ -22,7 +24,7 @@ describe('RailsResource.snapshots', function () {
     it('should store all keys', function () {
         var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
         book = new Book(data);
-        book.snapshot();
+        expect(book.snapshot()).toBe(0);
 
         expect(book.$snapshots).toBeDefined();
         expect(book.$snapshots.length).toBe(1);
@@ -47,17 +49,18 @@ describe('RailsResource.snapshots', function () {
         book.snapshot();
 
         expect(book.$snapshots[0].author).toBeDefined();
+        expect(book.$snapshots[0].author.id).toBe(1);
         expect(book.$snapshots[0]).toEqualData(data);
     });
 
     it('should store multiple snapshots', function () {
         var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
         book = new Book(data);
-        book.snapshot();
+        expect(book.snapshot()).toBe(0);
         book.$key = '1235';
-        book.snapshot();
+        expect(book.snapshot()).toBe(1);
         book.$key = '1236';
-        book.snapshot();
+        expect(book.snapshot()).toBe(2);
 
         expect(book.$snapshots).toBeDefined();
         expect(book.$snapshots.length).toBe(3);
@@ -105,6 +108,26 @@ describe('RailsResource.snapshots', function () {
 
         expect(book.author).toBeDefined();
         expect(book).toEqualData(data);
+    });
+
+    it('should not modify source nested object on rollback', function () {
+        var book, hughHoweyAuthor = {id: 2, name: 'Hugh Howey'},
+            data = {
+            id: 1,
+            $key: '1234',
+            name: 'The Winds of Winter',
+            author: {
+                id: 1,
+                name: 'George R. R. Martin'
+            }
+        };
+
+        book = new Book(data);
+        book.snapshot();
+        book.author = hughHoweyAuthor;
+        book.rollback();
+
+        expect(hughHoweyAuthor).toEqualData({id: 2, name: 'Hugh Howey'});
     });
 
 
@@ -185,16 +208,50 @@ describe('RailsResource.snapshots', function () {
         expect(book.$snapshots.length).toBe(0);
     });
 
-    it('should not change resource if number of versions is negative', function () {
+    it('should roll back to version in middle', function () {
         var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
         book = new Book(data);
+        book.snapshot();
         book.$key = '1235';
         book.snapshot();
-        book.rollback(-5);
+        book.$key = '1236';
+        book.snapshot();
+        book.rollbackTo(1);
 
         expect(book.$key).toBe('1235');
         expect(book.$snapshots).toBeDefined();
         expect(book.$snapshots.length).toBe(1);
+    });
+
+    it('should roll back to first version', function () {
+        var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        book.snapshot();
+        book.$key = '1235';
+        book.snapshot();
+        book.$key = '1236';
+        book.snapshot();
+        book.rollbackTo(0);
+
+        expect(book.$key).toBe('1234');
+        expect(book.$snapshots).toBeDefined();
+        expect(book.$snapshots.length).toBe(0);
+    });
+
+    it('should roll back to last version when version exceeds available versions', function () {
+        var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        book.snapshot();
+        book.$key = '1235';
+        book.snapshot();
+        book.$key = '1236';
+        book.snapshot();
+        book.$key = '1237';
+        book.rollbackTo(100);
+
+        expect(book.$key).toBe('1236');
+        expect(book.$snapshots).toBeDefined();
+        expect(book.$snapshots.length).toBe(2);
     });
 
     it('should reset snapshots on create', function () {
@@ -256,5 +313,115 @@ describe('RailsResource.snapshots', function () {
         expect(book.$key).toBe('1235');
         expect(book.$snapshots).toBeDefined();
         expect(book.$snapshots.length).toBe(0);
+    });
+
+    it('should call rollback callback on rollback', function () {
+        var book, callbackCalled = false, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        book.snapshot(function () {
+            callbackCalled = true;
+        });
+        book.rollback();
+        expect(callbackCalled).toBe(true);
+    });
+
+    it('should call correct rollback callback on each rollback', function () {
+        var book, firstCallbackCalled = false, secondCallbackCalled = false,
+            data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        book.snapshot(function () {
+            firstCallbackCalled = true;
+        });
+        book.$key = '1235';
+        book.snapshot(function () {
+            secondCallbackCalled = true;
+        });
+        book.$key = '1236';
+
+        book.rollback();
+        expect(book.$key).toBe('1235');
+        expect(firstCallbackCalled).toBe(false);
+        expect(secondCallbackCalled).toBe(true);
+
+        book.rollback();
+        expect(book.$key).toBe('1234');
+        expect(firstCallbackCalled).toBe(true);
+        expect(secondCallbackCalled).toBe(true);
+    });
+
+    describe('serializer', function () {
+        beforeEach(function () {
+            Book.configure({
+                serializer: railsSerializer(function () {
+                    this.exclude('author');
+                })
+            });
+        });
+
+        it('should exclude author from snapshot and rollback', function () {
+            var book, data = {
+                id: 1,
+                $key: '1234',
+                name: 'The Winds of Winter',
+                author: {
+                    id: 1,
+                    name: 'George R. R. Martin'
+                }
+            };
+
+            book = new Book(data);
+            book.snapshot();
+            book.author.name = 'George Orwell';
+
+            expect(book.$snapshots[0].author).not.toBeDefined();
+            expect(book.author).toEqualData({id: 1, name: 'George Orwell'});
+
+            book.rollback();
+            // should still be George Orwell since it wasn't snapshotted
+            expect(book.author).toEqualData({id: 1, name: 'George Orwell'});
+        });
+
+    });
+
+    describe('snapshotSerializer', function () {
+        beforeEach(function () {
+            Book.configure({
+                serializer: railsSerializer(function () {
+                    this.exclude('author');
+                }),
+                snapshotSerializer: railsSerializer(function () {
+                    this.exclude('$key');
+                })
+            });
+        });
+
+        it('should include author and exclude $key from snapshot and rollback', function () {
+            var book, data = {
+                id: 1,
+                $key: '1234',
+                name: 'The Winds of Winter',
+                author: {
+                    id: 1,
+                    name: 'George R. R. Martin'
+                }
+            };
+
+            book = new Book(data);
+            book.snapshot();
+            book.$key = '1235';
+            book.author.name = 'George Orwell';
+
+            expect(book.$snapshots[0].author).toBeDefined();
+            expect(book.$snapshots[0].$key).not.toBeDefined();
+            expect(book.$key).toBe('1235');
+            expect(book.author).toEqualData({id: 1, name: 'George Orwell'});
+
+            book.rollback();
+            // should be 1235 since it wasn't snapshotted
+            expect(book.$key).toBe('1235');
+            // should be George R. R. Martin since it was snapshotted
+            expect(book.author).toEqualData({id: 1, name: 'George R. R. Martin'});
+        });
+
     });
 });

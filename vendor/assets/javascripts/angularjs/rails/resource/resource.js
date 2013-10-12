@@ -117,12 +117,8 @@
                     this.config.responseInterceptors = cfg.responseInterceptors ? cfg.responseInterceptors.slice(0) : [];
                     this.config.afterResponseInterceptors = cfg.afterResponseInterceptors ? cfg.afterResponseInterceptors.slice(0) : [];
 
-                    // strings and functions are not considered objects by angular.isObject()
-                    if (angular.isObject(cfg.serializer)) {
-                        this.config.serializer = cfg.serializer;
-                    } else {
-                        this.config.serializer = RailsResourceInjector.createService(cfg.serializer || railsSerializer());
-                    }
+                    this.config.serializer = configureService(cfg.serializer, railsSerializer());
+                    this.config.snapshotSerializer = configureService(cfg.snapshotSerializer);
 
                     this.config.name = this.config.serializer.underscore(cfg.name);
                     this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
@@ -386,50 +382,88 @@
 
                 /**
                  * Stores a copy of this resource in the $snapshots array to allow undoing changes.
-                 * @returns {Object} The copy being stored into $snapshots.
+                 * @param {function} rollbackCallback Optional callback function to be executed after the rollback.
+                 * @returns {Number} The version of the snapshot created (0-based index)
                  */
-                RailsResource.prototype.snapshot = function () {
-                    var copy = angular.copy(this);
+                RailsResource.prototype.snapshot = function (rollbackCallback) {
+                    var copy = (this.constructor.config.snapshotSerializer || this.constructor.config.serializer).serialize(this);
+
                     // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
                     // not to mention using more memory for each snapshot.
                     delete copy.$snapshots;
+                    copy.$rollbackCallback = rollbackCallback;
+
+                    if (!this.$snapshots) {
+                        this.$snapshots = [];
+                    }
+
                     this.$snapshots.push(copy);
-                    return copy;
+                    return this.$snapshots.length - 1;
                 };
 
                 /**
-                 * Rolls back the resource to a previous snapshot.  All versions rolled back are removed from the stored
-                 * snapshots.
+                 * Rolls back the resource to a specific snapshot version (0-based index).
+                 * All versions after the specified version are removed from the snapshots list.
+                 *
+                 * If the version specified is greater than the number of versions then the last snapshot version
+                 * will be used.  If the version is less than 0 then the resource will be rolled back to the first version.
+                 *
+                 * If no snapshots are available then the operation will return false.
+                 *
+                 * If a rollback callback function was defined then it will be called after the rollback has been completed
+                 * with "this" assigned to the resource instance.
+                 *
+                 * @param {Number|undefined} version The version to roll back to.
+                 * @returns {Boolean} true if rollback was successful, false otherwise
+                 */
+                RailsResource.prototype.rollbackTo = function (version) {
+                    var versions, rollbackCallback,
+                        snapshots = this.$snapshots,
+                        snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
+
+                    // if an invalid snapshot version was specified then don't attempt to do anything
+                    if (!angular.isArray(snapshots) || snapshotsLength === 0 || !angular.isNumber(version)) {
+                        return false;
+                    }
+
+                    versions = snapshots.splice(Math.max(0, Math.min(version, snapshotsLength - 1)));
+
+                    if (!angular.isArray(versions) || versions.length === 0) {
+                        return false;
+                    }
+
+                    rollbackCallback = versions[0].$rollbackCallback;
+                    angular.extend(this, (this.constructor.config.snapshotSerializer || this.constructor.config.serializer).deserialize(versions[0]));
+
+                    // restore special variables
+                    this.$snapshots = snapshots;
+
+                    if (angular.isFunction(rollbackCallback)) {
+                        rollbackCallback.call(this);
+                    }
+
+                    return true;
+                };
+
+                /**
+                 * Rolls back the resource to a previous snapshot.
                  *
                  * When numVersions is undefined or 0 then a single version is rolled back.
-                 * When numVersions is -1 then the resource is rolled back to the first snapshot version.
                  * When numVersions exceeds the stored number of snapshots then the resource is rolled back to the first snapshot version.
+                 * When numVersions is less than 0 then the resource is rolled back to the first snapshot version.
                  *
                  * @param {Number|undefined} numVersions The number of versions to roll back to.  If undefined then
                  * @returns {Boolean} true if rollback was successful, false otherwise
                  */
                 RailsResource.prototype.rollback = function (numVersions) {
-                    var versions,
-                        snapshots = this.$snapshots,
-                        snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
+                    var snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
+                    numVersions = Math.min(numVersions || 1, snapshotsLength);
 
-                    numVersions = numVersions || 1;
-
-                    if (numVersions === -1) {
+                    if (numVersions < 0) {
                         numVersions = snapshotsLength;
                     }
 
-                    numVersions = Math.min(numVersions, snapshotsLength);
-
-                    // if an invalid snapshot version was specified then don't attempt to do anything
-                    if (!angular.isArray(this.$snapshots) || !angular.isNumber(numVersions) || numVersions <= 0) {
-                        return false;
-                    }
-
-                    versions = this.$snapshots.splice(-numVersions);
-                    angular.copy(versions[0], this);
-                    // restore special variables
-                    this.$snapshots = snapshots;
+                    this.rollbackTo(this.$snapshots.length - numVersions);
                     return true;
                 };
 
@@ -468,6 +502,17 @@
 
                         callback(dependency);
                     }
+                }
+
+                function configureService(service, defaultValue) {
+                    // strings and functions are not considered objects by angular.isObject()
+                    if (angular.isObject(service)) {
+                        return service;
+                    } else if (service || defaultValue) {
+                        return RailsResourceInjector.createService(service || defaultValue);
+                    }
+
+                    return undefined;
                 }
 
             }];
