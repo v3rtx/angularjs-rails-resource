@@ -386,7 +386,8 @@
                  * @returns {Number} The version of the snapshot created (0-based index)
                  */
                 RailsResource.prototype.snapshot = function (rollbackCallback) {
-                    var copy = (this.constructor.config.snapshotSerializer || this.constructor.config.serializer).serialize(this);
+                    var config = this.constructor.config,
+                        copy = (config.snapshotSerializer || config.serializer).serialize(this);
 
                     // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
                     // not to mention using more memory for each snapshot.
@@ -418,6 +419,7 @@
                  */
                 RailsResource.prototype.rollbackTo = function (version) {
                     var versions, rollbackCallback,
+                        config = this.constructor.config,
                         snapshots = this.$snapshots,
                         snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
 
@@ -433,10 +435,11 @@
                     }
 
                     rollbackCallback = versions[0].$rollbackCallback;
-                    angular.extend(this, (this.constructor.config.snapshotSerializer || this.constructor.config.serializer).deserialize(versions[0]));
+                    angular.extend(this, (config.snapshotSerializer || config.serializer).deserialize(versions[0]));
 
                     // restore special variables
                     this.$snapshots = snapshots;
+                    delete this.$rollbackCallback;
 
                     if (angular.isFunction(rollbackCallback)) {
                         rollbackCallback.call(this);
