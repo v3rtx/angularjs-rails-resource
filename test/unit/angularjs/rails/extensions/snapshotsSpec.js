@@ -12,7 +12,8 @@ describe('RailsResource.snapshots', function () {
         railsSerializer = _railsSerializer_;
         Book = railsResourceFactory({
             url: '/books',
-            name: 'book'
+            name: 'book',
+            extensions: ['snapshots']
         });
     }));
 

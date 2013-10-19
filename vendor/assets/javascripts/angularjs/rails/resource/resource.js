@@ -32,31 +32,70 @@
             rootWrapping: true,
             updateMethod: 'put',
             httpConfig: {},
-            defaultParams: undefined
+            defaultParams: undefined,
+            extensions: []
         };
 
+        /**
+         * Enables or disables root wrapping by default for RailsResources
+         * Defaults to true.
+         * @param {boolean} value true to enable root wrapping, false to disable
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.rootWrapping = function (value) {
             defaultOptions.rootWrapping = value;
             return this;
         };
 
+        /**
+         * Configures what HTTP operation should be used for update by default for RailsResources.
+         * Defaults to 'put'
+         * @param value
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.updateMethod = function (value) {
             defaultOptions.updateMethod = value;
             return this;
         };
 
+        /**
+         * Configures default HTTP configuration operations for all RailsResources.
+         *
+         * @param {Object} value See $http for available configuration options.
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.httpConfig = function (value) {
             defaultOptions.httpConfig = value;
             return this;
         };
 
+        /**
+         * Configures default HTTP query parameters for all RailsResources.
+         *
+         * @param {Object} value Object of key/value pairs representing the HTTP query parameters for all HTTP operations.
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.defaultParams = function (value) {
             defaultOptions.defaultParams = value;
             return this;
         };
 
-        this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
-            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
+        /**
+         * List of RailsResource extensions to include by default.
+         *
+         * @param {...string} extensions One or more extension names to include
+         * @returns {*}
+         */
+        this.extensions = function () {
+            defaultOptions.extensions = [];
+            angular.forEach(arguments, function (value) {
+                defaultOptions.extensions = defaultOptions.extensions.concat(value);
+            });
+            return this;
+        };
+
+        this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector', 'RailsInflector',
+            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector, RailsInflector) {
 
                 function RailsResource(value) {
                     var instance = this;
@@ -80,24 +119,87 @@
                     }
                 }
 
-                RailsResource.extend = function (child) {
-                    // Extend logic copied from CoffeeScript generated code
-                    var __hasProp = {}.hasOwnProperty, parent = this;
-                    for (var key in parent) {
-                        if (__hasProp.call(parent, key)) child[key] = parent[key];
+                /**
+                 * Extends the RailsResource to the child constructor function making the child constructor a subclass of
+                 * RailsResource.  This is modeled off of CoffeeScript's class extend function.  All RailsResource
+                 * class properties defined are copied to the child class and the child's prototype chain is configured
+                 * to allow instances of the child class to have all of the instance methods of RailsResource.
+                 *
+                 * Like CoffeeScript, a __super__ property is set on the child class to the parent resource's prototype chain.
+                 * This is done to allow subclasses to extend the functionality of instance methods and still
+                 * call back to the original method using:
+                 *
+                 *     Class.__super__.method.apply(this, arguments);
+                 *
+                 * @param {function} child Child constructor function
+                 * @returns {function} Child constructor function
+                 */
+                RailsResource.extendTo = function (child) {
+                    angular.forEach(this, function (value, key) {
+                        child[key] = value;
+                    });
+
+                    if (angular.isArray(this.$modules)) {
+                        child.$modules = this.$modules.slice(0);
                     }
 
                     function ctor() {
                         this.constructor = child;
                     }
 
-                    ctor.prototype = parent.prototype;
+                    ctor.prototype = this.prototype;
                     child.prototype = new ctor();
-                    child.__super__ = parent.prototype;
+                    child.__super__ = this.prototype;
                     return child;
                 };
 
-                // allow calling configure multiple times to set configuration options and override values from inherited resources
+                /**
+                 * Copies a mixin's properties to the resource.
+                 *
+                 * If module is a String then we it will be loaded using Angular's dependency injection.  If the name is
+                 * not valid then Angular will throw an error.
+                 *
+                 * @param {...String|function|Object} mixins The mixin or name of the mixin to add.
+                 * @returns {RailsResource} this
+                 */
+                RailsResource.extend = function () {
+                    angular.forEach(arguments, function (mixin) {
+                        addMixin(this, this, mixin, function (Resource, mixin) {
+                            if (angular.isFunction(mixin.extended)) {
+                                mixin.extended(Resource);
+                            }
+                        });
+                    }, this);
+
+                    return this;
+                };
+
+                /**
+                 * Copies a mixin's properties to the resource's prototype chain.
+                 *
+                 * If module is a String then we it will be loaded using Angular's dependency injection.  If the name is
+                 * not valid then Angular will throw an error.
+                 *
+                 * @param {...String|function|Object} mixins The mixin or name of the mixin to add
+                 * @returns {RailsResource} this
+                 */
+                RailsResource.include = function () {
+                    angular.forEach(arguments, function (mixin) {
+                        addMixin(this, this.prototype, mixin, function (Resource, mixin) {
+                            if (angular.isFunction(mixin.included)) {
+                                mixin.included(Resource);
+                            }
+                        });
+                    }, this);
+
+                    return this;
+                };
+
+                /**
+                 * Sets configuration options.  This method may be called multiple times to set additional options or to
+                 * override previous values (such as the case with inherited resources).
+                 * @param cfg
+                 */
                 RailsResource.configure = function (cfg) {
                     cfg = cfg || {};
 
@@ -117,18 +219,27 @@
                     this.config.responseInterceptors = cfg.responseInterceptors ? cfg.responseInterceptors.slice(0) : [];
                     this.config.afterResponseInterceptors = cfg.afterResponseInterceptors ? cfg.afterResponseInterceptors.slice(0) : [];
 
-                    this.config.serializer = configureService(cfg.serializer, railsSerializer());
-                    this.config.snapshotSerializer = configureService(cfg.snapshotSerializer);
+                    this.config.serializer = RailsResourceInjector.getService(cfg.serializer || railsSerializer());
 
                     this.config.name = this.config.serializer.underscore(cfg.name);
                     this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
 
                     this.config.urlBuilder = railsUrlBuilder(this.config.url);
                     this.config.resourceConstructor = this;
+
+                    this.extend.apply(this, loadExtensions((cfg.extensions || []).concat(defaultOptions.extensions)));
+
+                    angular.forEach(this.$mixins, function (mixin) {
+                        if (angular.isFunction(mixin.configure)) {
+                            mixin.configure(this.config, cfg);
+                        }
+                    }, this);
                 };
 
-                RailsResource.configure({});
-
+                /**
+                 * Configures the URL for the resource.
+                 * @param {String|function} url The url string or function.
+                 */
                 RailsResource.setUrl = function (url) {
                     this.configure({url: url});
                 };
@@ -348,11 +459,11 @@
                 });
 
                 RailsResource.prototype.create = function () {
-                    return resetSnapshotsOnSuccess(this.$post(this.$url(), this));
+                    return this.$post(this.$url(), this);
                 };
 
                 RailsResource.prototype.update = function () {
-                    return resetSnapshotsOnSuccess(this['$' + this.constructor.config.updateMethod](this.$url(), this));
+                    return this['$' + this.constructor.config.updateMethod](this.$url(), this);
                 };
 
                 RailsResource.prototype.isNew = function () {
@@ -377,109 +488,10 @@
 
                 //using ['delete'] instead of .delete for IE7/8 compatibility
                 RailsResource.prototype.remove = RailsResource.prototype['delete'] = function () {
-                    return resetSnapshotsOnSuccess(this.$delete(this.$url()));
-                };
-
-                /**
-                 * Stores a copy of this resource in the $snapshots array to allow undoing changes.
-                 * @param {function} rollbackCallback Optional callback function to be executed after the rollback.
-                 * @returns {Number} The version of the snapshot created (0-based index)
-                 */
-                RailsResource.prototype.snapshot = function (rollbackCallback) {
-                    var config = this.constructor.config,
-                        copy = (config.snapshotSerializer || config.serializer).serialize(this);
-
-                    // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
-                    // not to mention using more memory for each snapshot.
-                    delete copy.$snapshots;
-                    copy.$rollbackCallback = rollbackCallback;
-
-                    if (!this.$snapshots) {
-                        this.$snapshots = [];
-                    }
-
-                    this.$snapshots.push(copy);
-                    return this.$snapshots.length - 1;
-                };
-
-                /**
-                 * Rolls back the resource to a specific snapshot version (0-based index).
-                 * All versions after the specified version are removed from the snapshots list.
-                 *
-                 * If the version specified is greater than the number of versions then the last snapshot version
-                 * will be used.  If the version is less than 0 then the resource will be rolled back to the first version.
-                 *
-                 * If no snapshots are available then the operation will return false.
-                 *
-                 * If a rollback callback function was defined then it will be called after the rollback has been completed
-                 * with "this" assigned to the resource instance.
-                 *
-                 * @param {Number|undefined} version The version to roll back to.
-                 * @returns {Boolean} true if rollback was successful, false otherwise
-                 */
-                RailsResource.prototype.rollbackTo = function (version) {
-                    var versions, rollbackCallback,
-                        config = this.constructor.config,
-                        snapshots = this.$snapshots,
-                        snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
-
-                    // if an invalid snapshot version was specified then don't attempt to do anything
-                    if (!angular.isArray(snapshots) || snapshotsLength === 0 || !angular.isNumber(version)) {
-                        return false;
-                    }
-
-                    versions = snapshots.splice(Math.max(0, Math.min(version, snapshotsLength - 1)));
-
-                    if (!angular.isArray(versions) || versions.length === 0) {
-                        return false;
-                    }
-
-                    rollbackCallback = versions[0].$rollbackCallback;
-                    angular.extend(this, (config.snapshotSerializer || config.serializer).deserialize(versions[0]));
-
-                    // restore special variables
-                    this.$snapshots = snapshots;
-                    delete this.$rollbackCallback;
-
-                    if (angular.isFunction(rollbackCallback)) {
-                        rollbackCallback.call(this);
-                    }
-
-                    return true;
-                };
-
-                /**
-                 * Rolls back the resource to a previous snapshot.
-                 *
-                 * When numVersions is undefined or 0 then a single version is rolled back.
-                 * When numVersions exceeds the stored number of snapshots then the resource is rolled back to the first snapshot version.
-                 * When numVersions is less than 0 then the resource is rolled back to the first snapshot version.
-                 *
-                 * @param {Number|undefined} numVersions The number of versions to roll back to.  If undefined then
-                 * @returns {Boolean} true if rollback was successful, false otherwise
-                 */
-                RailsResource.prototype.rollback = function (numVersions) {
-                    var snapshotsLength = this.$snapshots ? this.$snapshots.length : 0;
-                    numVersions = Math.min(numVersions || 1, snapshotsLength);
-
-                    if (numVersions < 0) {
-                        numVersions = snapshotsLength;
-                    }
-
-                    this.rollbackTo(this.$snapshots.length - numVersions);
-                    return true;
+                    return this.$delete(this.$url());
                 };
 
                 return RailsResource;
-
-                function resetSnapshotsOnSuccess(promise) {
-                    return promise.then(function (resource) {
-                        if (resource && resource.$snapshots) {
-                            resource.$snapshots.length = 0;
-                        }
-                        return resource;
-                    });
-                }
 
                 function appendPath(url, path) {
                     if (path) {
@@ -507,17 +519,43 @@
                     }
                 }
 
-                function configureService(service, defaultValue) {
-                    // strings and functions are not considered objects by angular.isObject()
-                    if (angular.isObject(service)) {
-                        return service;
-                    } else if (service || defaultValue) {
-                        return RailsResourceInjector.createService(service || defaultValue);
+                function addMixin(Resource, destination, mixin, callback) {
+                    var excludedKeys = ['included', 'extended,', 'configure'];
+
+                    if (!Resource.$mixins) {
+                        Resource.$mixins = [];
                     }
 
-                    return undefined;
+                    if (angular.isString(mixin)) {
+                        mixin = RailsResourceInjector.getDependency(mixin);
+                    }
+
+                    if (mixin && Resource.$mixins.indexOf(mixin) === -1) {
+                        angular.forEach(mixin, function (value, key) {
+                            if (excludedKeys.indexOf(key) === -1) {
+                                destination[key] = value;
+                            }
+                        });
+
+                        Resource.$mixins.push(mixin);
+
+                        if (angular.isFunction(callback)) {
+                            callback(Resource, mixin);
+                        }
+                    }
                 }
 
+                function loadExtensions(extensions) {
+                    var modules = [];
+
+                    angular.forEach(extensions, function (extensionName) {
+                        extensionName = 'RailsResource' + extensionName.charAt(0).toUpperCase() + extensionName.slice(1) + 'Mixin';
+
+                        modules.push(RailsResourceInjector.getDependency(extensionName));
+                    });
+
+                    return modules;
+                }
             }];
     });
 
@@ -527,7 +565,7 @@
                 Resource.__super__.constructor.apply(this, arguments);
             }
 
-            RailsResource.extend(Resource);
+            RailsResource.extendTo(Resource);
             Resource.configure(config);
 
             return Resource;

@@ -505,6 +505,8 @@ describe('railsResourceFactory', function () {
 
               // @configure url: '/books', name: 'book'
               Book.configure({ url: '/books', name: 'book' });
+              Book.extend('RailsResourceSnapshotsMixin');
+              Book.extend({ bookProperty: 1});
 
               function Book() {
                   Book.__super__.constructor.apply(this, arguments);
@@ -574,5 +576,82 @@ describe('railsResourceFactory', function () {
             expect(carManual.id).toBe(1);
             expect(carManual.name).toBe('Honda CR-V');
         });
+
+        it('should have included properties on subclass', function () {
+            expect(CarManual.bookProperty).toBe(1);
+            expect(CarManual.prototype.snapshot).toBeDefined();
+        });
+    });
+
+    describe('mixins', function () {
+        var railsResourceFactory;
+
+        beforeEach(inject(function (_railsResourceFactory_) {
+            railsResourceFactory = _railsResourceFactory_;
+        }));
+
+        it('should include extensions as part of initial configure', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test', extensions: ['snapshots']});
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should only include extensions once', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test', extensions: ['snapshots', 'snapshots']});
+            expect(Resource.$mixins.length).toBe(2); // Snapshots extension includes additional mixin
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should only include module once', function () {
+            var mixin = {test: 1}, Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.include(mixin);
+            Resource.include(mixin);
+            expect(Resource.$mixins.length).toBe(1);
+        });
+
+        it('should include extensions as part of second configure call', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.configure({extensions: ['snapshots']});
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should throw an error if extension is not valid', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            expect(function () {
+                Resource.configure({extensions: ['invalid']});
+            }).toThrow();
+        });
+
+        it('should include object properties as class properties', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.extend({
+                classMethod: function () {},
+                classProperty: 1
+            });
+            expect(Resource.classMethod).toBeDefined();
+            expect(Resource.classProperty).toBe(1);
+        });
+
+        it('should include class properties', function () {
+            function Mixin() {}
+            Mixin.classMethod = function () {};
+            Mixin.classProperty = 1;
+
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.extend(Mixin);
+            expect(Resource.classMethod).toBe(Mixin.classMethod);
+            expect(Resource.classProperty).toBe(Mixin.classProperty);
+        });
+
+        it('should include instance properties', function () {
+            function Mixin() {}
+            Mixin.instanceMethod = function () {};
+            Mixin.instanceProperty = 1;
+
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.include(Mixin);
+            expect(Resource.prototype.instanceMethod).toBe(Mixin.instanceMethod);
+            expect(Resource.prototype.instanceProperty).toBe(Mixin.instanceProperty);
+        });
+
     });
 });

@@ -11,7 +11,8 @@ module.exports = function(config) {
       'test/lib/angular/angular-loader.js',
       'test/lib/angular/angular-sanitize.js',
       'test/lib/angular/angular-mocks.js',
-      'vendor/assets/javascripts/**/*.js',
+      'vendor/assets/javascripts/angularjs/rails/resource/index.js',
+      'vendor/assets/javascripts/angularjs/rails/resource/**/*.js',
       'test/unit/**/*.js'
     ],
     junitReporter: {

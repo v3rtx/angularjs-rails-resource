@@ -17,9 +17,9 @@
 
         /**
          * Looks up and instantiates an instance of the requested service.  If the service is not a string then it is
-         * assumed to be a constuctor function.
+         * assumed to be a constructor function.
          *
-         * @param service (string | function) The service to instantiate
+         * @param {String|function|Object} service  The service to instantiate
          * @returns {*} A new instance of the requested service
          */
         function createService(service) {
@@ -30,8 +30,25 @@
             return undefined;
         }
 
+        /**
+         * Looks up and instantiates an instance of the requested service if .
+         * @param {String|function|Object} service The service to instantiate
+         * @returns {*}
+         */
+        function getService(service) {
+            // strings and functions are not considered objects by angular.isObject()
+            if (angular.isObject(service)) {
+                return service;
+            } else if (service) {
+                return createService(service);
+            }
+
+            return undefined;
+        }
+
         return {
             createService: createService,
+            getService: getService,
             getDependency: getDependency
         }
     }]);

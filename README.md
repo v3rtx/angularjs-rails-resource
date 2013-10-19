@@ -98,7 +98,7 @@ class Encyclopedia extends Book
 
 ##### JavaScript
 Since the purpose of exposing the RailsResource was to allow for CoffeeScript users to create classes from it the JavaScript way
-is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extend</code> function is a modification
+is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extendTo</code> function is a modification
 of the <code>__extends</code> function that CoffeeScript generates.
 
 ````javascript
@@ -106,7 +106,7 @@ function Resource() {
     Resource.__super__.constructor.apply(this, arguments);
 }
 
-RailsResource.extend(Resource);
+RailsResource.extendTo(Resource);
 Resource.configure(config);
 ````
 
@@ -188,7 +188,6 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
- * **snapshotSerializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options specific to [snapshot and rollback](#snapshots).
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -247,6 +246,10 @@ RailsResources have the following class methods available.
     * **data** {object} (optional) - Optional data to set on the new instance
 
 * configure(options) - Change one or more configuration option for a resource.
+
+* extendTo(child) - Modifies the child to be a subclass of a RailsResource.  This can be used to create multiple levels of inheritance. See [RailsResource extension](#RailsResource-extension) for more information
+
+* include(...module) - Includes a mixin module into the resource.  See [Mixins](#mixins) for more information
 
 * setUrl(url) - Updates the url for the resource, same as calling <code>configure({url: url})</code>
 
@@ -322,11 +325,6 @@ All of the instance methods will update the instance in-place on response and wi
     * **customUrl** {string} - The url to DELETE to
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
-* snapshot(rollbackCallback) - Creates a snapshot of the current state of the resource.  See [Snapshots](#snapshots) for more details.
-
-* rollbackTo(version) - Rolls back the resource to specified snapshot version.  See [Snapshots](#snapshots) for more details.
-
-* rollback(numVersions) - Rolls back the resource the specified number of versions.  See [Snapshots](#snapshots) for more details.
 
 ## Serializers
 Out of the box, resources serialize all available keys and transform key names between camel case and underscores to match Ruby conventions.
@@ -447,7 +445,69 @@ The resource also exposes a class method <code>afterResponse(fn)</code> that acc
 to the list of after response interceptors for the resource class.  Functions added with <code>afterResponse</code> don't need to know anything about promises since they are automatically wrapped
 as an interceptor.
 
-## Snapshots
+## Mixins
+The ability to add a [Mixin](http://en.wikipedia.org/wiki/Mixin) to a RailsResource is modeled after the example code in
+in the [Classes](http://arcturo.github.io/library/coffeescript/03_classes.html) chapter of [The Little Book on CoffeeScript](http://arcturo.github.io/library/coffeescript/index.html).
+
+RailsResource provides two methods:
+* **extend** - Add class properties / methods to the resource
+* **include** - Add instance properties / methods to the resource prototype chain
+
+When you call <code>extend</code> or <code>include</code> the mixin will be added to the resource.  If your mixin provides
+one of the callback methods (<code>extended</code> or <code>included</code>) then those methods will be called when the mixin
+is added.  One additional change from the normal mixin behavior is that your mixins can implement an additional <code>configure</code>
+function that will be called whenever the resource's <code>configure</code> function is called.  That way the mixin can provide
+additional configuration options.
+
+## Extensions
+Extensions are provided [mixins](#mixins) that follow specific naming pattern to make it easier to include them by a shortened name.
+
+The available extension names are:
+ * [snapshots](#snapshots) - RailsResourceSnapshotsMixin
+
+To include an extension, you can use one of the following mechanisms:
+
+1. <code>RailsResourceProvider.extensions</code> - adds the extension to all RailsResources within the application.
+````javascript
+app.config(function (RailsResourceProvider) {
+    RailsResourceProvider.extensions('snapshots');
+);
+````
+
+2. Resource <code>extensions</code> configuration option - adds the extension to a single RailsResource
+JavaScript:
+````javascript
+Book = railsResourceFactory({
+    url: '/books',
+    name: 'book',
+    extensions: ['snapshots']
+});
+````
+
+CoffeeScript:
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book', extensions: ['snapshots']
+````
+
+3. RailsResource.extend - explicitly include the extension as a module
+JavaScript:
+````javascript
+Book = railsResourceFactory({ url: '/books', name: 'book' });
+// by name
+Book.extend('RailsResourceSnapshotsMixin');
+// or by injected reference
+Book.extend(RailsResourceSnapshotsMixin);
+````
+
+CoffeeScript:
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book'
+  @extend 'RailsResourceSnapshotsMixin'
+````
+
+### Snapshots
 Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
 saved snapshots and yes, you can create as many snapshots as you want.
 
@@ -459,20 +519,23 @@ option.
 Calling <code>save</code>, <code>create</code>, <code>update</code>, or <code>delete</code>/<code>remove</code> on a resource instance
 will remove all snapshots when the operation completes successfully.
 
+#### Configuration Options
+ * **snapshotSerializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options specific to [snapshot and rollback](#snapshots).
 
-### Creating Snapshots
+
+#### Creating Snapshots
 Creating a snapshot is easy, just call the <code>snapshot</code> function.  You can pass an optional callback function to <code>snapshot</code> to perform
 additional custom operations after the rollback is complete.   The callback function is specific to each snapshot version created so make sure you pass it every
 time if it's a callback you always want called.
 
-### Rolling back
+#### Rolling back
 So you want to undo changes to the resource?  There are two methods you can use to roll back the resource to a previous snapshot version <code>rollback</code>
 and <code>rollbackTo</code>.  Each method will:
  * Deserialize the snapshot data and update the resource instance with the new data.
  * Remove all snapshots newer than the version being rolled back to.
  * Call the rollback callback if it was specified on the <code>snapshot</code> in the context of the resource instance.
 
-#### rollback
+##### rollback
 <code>rollback(numVersions)</code> allows you to roll back the resource.  If you do not specify <code>numVersions</code> then a resource is rolled back to the last
 snapshot version.  <code>numVersions</code> can be used to roll back further than the last snapshot version based on the following rules:
 
@@ -481,7 +544,7 @@ snapshot version.  <code>numVersions</code> can be used to roll back further tha
 * When <code>numVersions</code> is less than 0 then the resource is rolled back to the first snapshot version.
 * Otherwise, <code>numVersions</code> represents the nth version from the last snapshot version (similar to calling rollback <code>numVersions</code> times).
 
-#### rollbackTo
+##### rollbackTo
 <code>rollbackTo(snapshotVersion)</code> allows you to roll back the resource to a specific snapshot version.
 
 * When <code>snapshotVersion</code> is greater than the number of versions then the last snapshot version will be used.
