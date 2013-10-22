@@ -390,6 +390,22 @@ describe('railsSerializer', function () {
                 result = serializer.deserialize({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
                 expect(result).toEqualData({id: 1, first: 'George', middle: 'R. R.', last: 'Martin'});
             });
+
+            it('should only serialize id and books', function() {
+                var result,
+                    serializer = createSerializer(function(config) {
+                        this.only('id', 'books');
+                        this.nestedAttribute('books');
+                        this.serializeWith('books', factory(function() { }));
+                    });
+                var book = { id: 1, title: 'A Game of Thrones', publicationDate: '1996-08-06' };
+                result = serializer.serialize({
+                    id: 1, first: 'George', last: 'Martin', books: [book]
+                });
+                expect(result).toEqualData({ id: 1, books_attributes: [{ id: 1, title: 'A Game of Thrones', publication_date: '1996-08-06' }] });
+                result = serializer.deserialize(result);
+                expect(result).toEqual({ id: 1, books: [book]});
+            });
         });
     });
 });
