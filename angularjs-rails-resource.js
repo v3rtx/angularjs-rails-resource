@@ -1,6 +1,6 @@
 /**
  * A resource factory inspired by $resource from AngularJS
- * @version v1.0.0-pre.1 - 2013-10-15
+ * @version v1.0.0-pre.1 - 2013-10-23
  * @link https://github.com/FineLinePrototyping/angularjs-rails-resource.git
  * @author 
  */
@@ -408,8 +408,17 @@
                 Serializer.prototype.getSerializedAttributeName = function (attributeName) {
                     var mappedName = this.serializeMappings[attributeName] || attributeName;
 
-                    if (this.isExcludedFromSerialization(attributeName) || this.isExcludedFromSerialization(mappedName)) {
-                        return undefined;
+                    var mappedNameExcluded = this.isExcludedFromSerialization(mappedName),
+                        attributeNameExcluded = this.isExcludedFromSerialization(attributeName);
+
+                    if(this.options.excludeByDefault) {
+                        if(mappedNameExcluded && attributeNameExcluded) {
+                            return undefined;
+                        }
+                    } else {
+                        if (mappedNameExcluded || attributeNameExcluded) {
+                            return undefined;
+                        }
                     }
 
                     return this.underscore(mappedName);
@@ -474,7 +483,7 @@
 
                     // custom serializer takes precedence over resource serializer
                     if (serializer) {
-                        return RailsResourceInjector.createService(serializer)
+                        return RailsResourceInjector.createService(serializer);
                     } else if (resource) {
                         return resource.config.serializer;
                     }
