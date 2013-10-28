@@ -38,6 +38,7 @@ angular.module('app').config(function (railsSerializerFactory) {
 ````
 
 ## Installation
+### Rails Asset Pipeline
 Add this line to your application's Gemfile to use the latest stable version:
 ```ruby
 gem 'angularjs-rails-resource', '~> 0.2.3'
@@ -47,6 +48,17 @@ Include the javascript somewhere in your asset pipeline:
 ```javascript
 //= require angularjs/rails/resource
 ```
+
+To add extensions just add additional requires:
+```javascript
+//= require angularjs/rails/resource/extensions/snapshots
+```
+
+### Standalone
+If you aren't using the Rails asset pipeline you can download the combined angularjs-rails-resource.js (or min.js)
+or use [Bower](http://bower.io/) to install <code>angularjs-rails-resource</code>.
+
+
 ## Branching and Versioning
 As much as possible we will try to adhere to the [SemVer](http://semver.org/) guidelines on release numbering.
 
@@ -465,47 +477,46 @@ Extensions are provided [mixins](#mixins) that follow specific naming pattern to
 The available extension names are:
  * [snapshots](#snapshots) - RailsResourceSnapshotsMixin
 
-To include an extension, you can use one of the following mechanisms:
+To include an extension, you have to first include the extension in your project.
+You then need to add the extension to the in one of the following ways to RailsResource:
 
-1. <code>RailsResourceProvider.extensions</code> - adds the extension to all RailsResources within the application.
+* <code>RailsResourceProvider.extensions</code> - adds the extension to all RailsResources within the application.
 ````javascript
 app.config(function (RailsResourceProvider) {
     RailsResourceProvider.extensions('snapshots');
 );
 ````
 
-2. Resource <code>extensions</code> configuration option - adds the extension to a single RailsResource
-JavaScript:
-````javascript
-Book = railsResourceFactory({
-    url: '/books',
-    name: 'book',
-    extensions: ['snapshots']
-});
-````
+* Resource <code>extensions</code> configuration option - adds the extension to a single RailsResource
+  * JavaScript:
+    ````javascript
+    Book = railsResourceFactory({
+        url: '/books',
+        name: 'book',
+        extensions: ['snapshots']
+    });
+    ````
+  * CoffeeScript:
+    ````coffeescript
+    class Book extends RailsResource
+      @configure url: '/books', name: 'book', extensions: ['snapshots']
+    ````
 
-CoffeeScript:
-````coffeescript
-class Book extends RailsResource
-  @configure url: '/books', name: 'book', extensions: ['snapshots']
-````
-
-3. RailsResource.extend - explicitly include the extension as a module
-JavaScript:
-````javascript
-Book = railsResourceFactory({ url: '/books', name: 'book' });
-// by name
-Book.extend('RailsResourceSnapshotsMixin');
-// or by injected reference
-Book.extend(RailsResourceSnapshotsMixin);
-````
-
-CoffeeScript:
-````coffeescript
-class Book extends RailsResource
-  @configure url: '/books', name: 'book'
-  @extend 'RailsResourceSnapshotsMixin'
-````
+* RailsResource.extend - explicitly include the extension as a module
+  * JavaScript:
+    ````javascript
+    Book = railsResourceFactory({ url: '/books', name: 'book' });
+    // by name
+    Book.extend('RailsResourceSnapshotsMixin');
+    // or by injected reference
+    Book.extend(RailsResourceSnapshotsMixin);
+    ````
+  * CoffeeScript:
+    ````coffeescript
+    class Book extends RailsResource
+      @configure url: '/books', name: 'book'
+      @extend 'RailsResourceSnapshotsMixin'
+    ````
 
 ### Snapshots
 Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
