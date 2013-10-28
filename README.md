@@ -55,9 +55,11 @@ To add extensions just add additional requires:
 ```
 
 ### Standalone
-If you aren't using the Rails asset pipeline you can download the combined angularjs-rails-resource.js (or min.js)
-or use [Bower](http://bower.io/) to install <code>angularjs-rails-resource</code>.
+If you aren't using the Rails asset pipeline you can download the combined
+[angularjs-rails-resource.js](https://github.com/FineLinePrototyping/dist-angularjs-rails-resource/blob/master/angularjs-rails-resource.js)
+or [angularjs-rails-resource.min.js](https://github.com/FineLinePrototyping/dist-angularjs-rails-resource/blob/master/angularjs-rails-resource.min.js).
 
+You can also use [Bower](http://bower.io/) to install <code>angularjs-rails-resource</code>.
 
 ## Branching and Versioning
 As much as possible we will try to adhere to the [SemVer](http://semver.org/) guidelines on release numbering.
@@ -480,43 +482,51 @@ The available extension names are:
 To include an extension, you have to first include the extension in your project.
 You then need to add the extension to the in one of the following ways to RailsResource:
 
-* <code>RailsResourceProvider.extensions</code> - adds the extension to all RailsResources within the application.
+### Application-wide Resource Extensions
+<code>RailsResourceProvider.extensions</code> - adds the extension to all RailsResources within the application.
 ````javascript
 app.config(function (RailsResourceProvider) {
     RailsResourceProvider.extensions('snapshots');
 );
 ````
 
-* Resource <code>extensions</code> configuration option - adds the extension to a single RailsResource
-  * JavaScript:
-    ````javascript
-    Book = railsResourceFactory({
-        url: '/books',
-        name: 'book',
-        extensions: ['snapshots']
-    });
-    ````
-  * CoffeeScript:
-    ````coffeescript
-    class Book extends RailsResource
-      @configure url: '/books', name: 'book', extensions: ['snapshots']
-    ````
+### Per-Resource Extensions
+#### Configuration Option
+The <code>extensions</code> configuration option adds the extension to a single RailsResource
 
-* RailsResource.extend - explicitly include the extension as a module
-  * JavaScript:
-    ````javascript
-    Book = railsResourceFactory({ url: '/books', name: 'book' });
-    // by name
-    Book.extend('RailsResourceSnapshotsMixin');
-    // or by injected reference
-    Book.extend(RailsResourceSnapshotsMixin);
-    ````
-  * CoffeeScript:
-    ````coffeescript
-    class Book extends RailsResource
-      @configure url: '/books', name: 'book'
-      @extend 'RailsResourceSnapshotsMixin'
-    ````
+##### JavaScript
+````javascript
+Book = railsResourceFactory({
+    url: '/books',
+    name: 'book',
+    extensions: ['snapshots']
+});
+````
+##### CoffeeScript
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book', extensions: ['snapshots']
+````
+
+#### RailsResource.extend
+RailsResource.extend - explicitly include the extension as a module
+
+##### JavaScript
+````javascript
+Book = railsResourceFactory({ url: '/books', name: 'book' });
+// by name
+Book.extend('RailsResourceSnapshotsMixin');
+// or by injected reference
+Book.extend(RailsResourceSnapshotsMixin);
+````
+
+##### CoffeeScript
+
+````coffeescript
+class Book extends RailsResource
+  @configure url: '/books', name: 'book'
+  @extend 'RailsResourceSnapshotsMixin'
+````
 
 ### Snapshots
 Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
