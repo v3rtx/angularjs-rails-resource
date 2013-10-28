@@ -294,9 +294,9 @@
                 Serializer.prototype.getDeserializedAttributeName = function (attributeName) {
                     var camelizedName = this.camelize(attributeName);
 
-                    camelizedName = this.deserializeMappings[attributeName]
-                        || this.deserializeMappings[camelizedName]
-                        || camelizedName;
+                    camelizedName = this.deserializeMappings[attributeName] ||
+                        this.deserializeMappings[camelizedName] ||
+                        camelizedName;
 
                     if (this.isExcludedFromDeserialization(attributeName) || this.isExcludedFromDeserialization(camelizedName)) {
                         return undefined;
@@ -329,7 +329,7 @@
 
                     // custom serializer takes precedence over resource serializer
                     if (serializer) {
-                        return RailsResourceInjector.createService(serializer)
+                        return RailsResourceInjector.createService(serializer);
                     } else if (resource) {
                         return resource.config.serializer;
                     }
@@ -518,7 +518,7 @@
                         return this.options.camelize(value);
                     }
                     return value;
-                }
+                };
 
                 return Serializer;
             }

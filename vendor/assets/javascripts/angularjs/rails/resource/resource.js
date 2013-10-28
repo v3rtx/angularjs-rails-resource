@@ -111,7 +111,7 @@
                                     this.response = callback(this.response, this.resource, this.context);
                                     return immediatePromise(this.response);
                                 }
-                            }
+                            };
                         };
 
                         var data = this.constructor.callInterceptors(immediatePromise({data: value}), this).response.data;
@@ -467,7 +467,8 @@
                 };
 
                 RailsResource.prototype.isNew = function () {
-                    return this.id == null;
+                    return angular.isUndefined(this.id) ||
+                        this.id === null;
                 };
 
                 RailsResource.prototype.save = function () {
@@ -478,11 +479,11 @@
                     }
                 };
 
-                RailsResource['$delete'] = function (url) {
+                RailsResource.$delete = function (url) {
                     return this.processResponse($http['delete'](url, this.getHttpConfig()));
                 };
 
-                RailsResource.prototype['$delete'] = function (url) {
+                RailsResource.prototype.$delete = function (url) {
                     return this.processResponse($http['delete'](url, this.constructor.getHttpConfig()));
                 };
 
@@ -569,7 +570,7 @@
             Resource.configure(config);
 
             return Resource;
-        }
+        };
     }]);
 
 }());

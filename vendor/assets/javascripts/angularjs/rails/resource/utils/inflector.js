@@ -31,6 +31,6 @@
             camelize: camelize,
             underscore: underscore,
             pluralize: pluralize
-        }
+        };
     });
 }());

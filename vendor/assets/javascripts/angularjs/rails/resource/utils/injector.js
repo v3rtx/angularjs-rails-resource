@@ -9,7 +9,7 @@
          */
         function getDependency(dependency) {
             if (dependency) {
-                return angular.isString(dependency) ? $injector.get(dependency) : dependency
+                return angular.isString(dependency) ? $injector.get(dependency) : dependency;
             }
 
             return undefined;
@@ -50,6 +50,6 @@
             createService: createService,
             getService: getService,
             getDependency: getDependency
-        }
+        };
     }]);
 }());
