@@ -319,7 +319,7 @@
                     RailsResource['$' + method] = function (url, data) {
                         var config;
                         // clone so we can manipulate w/o modifying the actual instance
-                        data = RailsResource.transformData(angular.copy(data, {}));
+                        data = RailsResource.transformData(angular.copy(data));
                         config = angular.extend({method: method, url: url, data: data}, RailsResource.getHttpConfig());
                         return RailsResource.processResponse($http(config));
                     };
