@@ -1,6 +1,6 @@
 /**
  * A resource factory inspired by $resource from AngularJS
- * @version v1.0.0-pre.1 - 2013-10-23
+ * @version v1.0.0-pre.2 - 2013-11-24
  * @link https://github.com/FineLinePrototyping/angularjs-rails-resource.git
  * @author 
  */
@@ -834,7 +834,11 @@
                     }
 
                     this.config.name = this.config.serializer.underscore(cfg.name);
-                    this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
+
+                    // we don't want to turn undefined name into "undefineds" then the plural name won't update when the name is set
+                    if (this.config.name) {
+                        this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
+                    }
 
                     this.config.urlBuilder = railsUrlBuilder(this.config.url);
                     this.config.resourceConstructor = this;
@@ -1045,7 +1049,7 @@
                     RailsResource['$' + method] = function (url, data) {
                         var config;
                         // clone so we can manipulate w/o modifying the actual instance
-                        data = this.transformData(angular.copy(data, {}));
+                        data = this.transformData(angular.copy(data));
                         config = angular.extend({method: method, url: url, data: data}, this.getHttpConfig());
                         return this.processResponse($http(config));
                     };
