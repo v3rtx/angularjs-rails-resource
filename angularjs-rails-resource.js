@@ -1,6 +1,6 @@
 /**
  * A resource factory inspired by $resource from AngularJS
- * @version v0.2.4 - 2013-10-27
+ * @version v0.2.5 - 2013-11-24
  * @link https://github.com/FineLinePrototyping/angularjs-rails-resource.git
  * @author 
  */
@@ -1004,7 +1004,7 @@
                     RailsResource['$' + method] = function (url, data) {
                         var config;
                         // clone so we can manipulate w/o modifying the actual instance
-                        data = RailsResource.transformData(angular.copy(data, {}));
+                        data = RailsResource.transformData(angular.copy(data));
                         config = angular.extend({method: method, url: url, data: data}, RailsResource.getHttpConfig());
                         return RailsResource.processResponse($http(config));
                     };
