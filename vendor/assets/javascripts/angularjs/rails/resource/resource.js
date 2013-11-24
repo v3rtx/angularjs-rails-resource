@@ -149,7 +149,11 @@
                     }
 
                     this.config.name = this.config.serializer.underscore(cfg.name);
-                    this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
+
+                    // we don't want to turn undefined name into "undefineds" then the plural name won't update when the name is set
+                    if (this.config.name) {
+                        this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
+                    }
 
                     this.config.urlBuilder = railsUrlBuilder(this.config.url);
                     this.config.resourceConstructor = this;
