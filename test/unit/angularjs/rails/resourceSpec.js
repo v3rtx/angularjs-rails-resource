@@ -426,6 +426,14 @@ describe('railsResourceFactory', function () {
                 expect(test).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
             }));
         });
+
+        it('should be able to $post an array of resources', function () {
+            var data = [{id: 123, abc: 'xyz'}, {id: 124, abc: 'xyz'}];
+            $httpBackend['expectPOST']('/xyz', {tests: data} ).respond(200, {tests: data});
+            Test.$post('/xyz', data);
+            $httpBackend.flush();
+        });
+
     });
 
     describe('plural', function() {
