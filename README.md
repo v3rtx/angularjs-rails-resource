@@ -28,12 +28,12 @@ and <code>camelize</code> functions:
 ````javascript
 angular.module('app').config(function (railsSerializerFactory) {
     railsSerializerProvider.
-        underscore(function (name) {
-            return name;
-        }).
-        camelize(function (name) {
-            return name;
-        });
+    underscore(function (name) {
+        return name;
+    }).
+    camelize(function (name) {
+        return name;
+    });
 });
 ````
 
@@ -76,7 +76,10 @@ In order to create a Book resource, we would first define the factory within a m
 ```javascript
 angular.module('book.services', ['rails']);
 angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-    return railsResourceFactory({url: '/books', name: 'book'});
+    return railsResourceFactory({
+        url: '/books',
+        name: 'book'
+    });
 }]);
 ```
 We would then inject that service into a controller:
@@ -84,8 +87,10 @@ We would then inject that service into a controller:
 angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
     $scope.searching = true;
     // Find all books matching the title
-    $scope.books = Book.query({title: title});
-    $scope.books.then(function(results) {
+    $scope.books = Book.query({
+        title: title
+    });
+    $scope.books.then(function (results) {
         $scope.searching = false;
     }, function (error) {
         $scope.searching = false;
@@ -98,7 +103,11 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
     });
 
     // Create a book and save it
-    new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
+    new Book({
+        title: 'Gardens of the Moon',
+        author: 'Steven Erikson',
+        isbn: '0-553-81957-7'
+    }).create();
 }]);
 ```
 
@@ -117,7 +126,7 @@ Author = railsResourceFactory({
 ```
 You can also specify a serializer as a factory and inject it as a dependency.
 ```javascript
-angular.module('rails').factory('BookSerializer', function(railsSerializer) {
+angular.module('rails').factory('BookSerializer', function (railsSerializer) {
     return railsSerializer(function () {
         this.exclude('publicationDate', 'relatedBooks');
         this.rename('ISBN', 'isbn');
@@ -134,7 +143,6 @@ Book = railsResourceFactory({
     name: 'book',
     serializer: 'BookSerializer'
 });
-
 ```
 ## Resource Creation
 There are multiple ways that you can set up new resources in your application.
