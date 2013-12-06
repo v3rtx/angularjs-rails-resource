@@ -487,7 +487,7 @@ You then need to add the extension to the in one of the following ways to RailsR
 ````javascript
 app.config(function (RailsResourceProvider) {
     RailsResourceProvider.extensions('snapshots');
-);
+});
 ````
 
 ### Per-Resource Extensions
