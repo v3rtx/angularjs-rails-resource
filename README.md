@@ -26,15 +26,9 @@ Book.query({title: 'Moby Dick'}).then(function (books) {
 You can inject the <code>railsSerializerProvider</code> into your application config function and override the <code>underscore</code>
 and <code>camelize</code> functions:
 ````javascript
-angular.module('app').config(function (railsSerializerFactory) {
-    railsSerializerProvider.
-    underscore(function (name) {
-        return name;
-    }).
-    camelize(function (name) {
-        return name;
-    });
-});
+angular.module('app').config(["railsSerializerProvider", function(railsSerializerProvider) {
+    railsSerializerProvider.underscore(angular.identity).camelize(angular.identity);
+}]);
 ````
 
 ## Installation
