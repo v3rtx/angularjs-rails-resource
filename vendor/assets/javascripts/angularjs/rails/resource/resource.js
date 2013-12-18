@@ -32,60 +32,75 @@
             rootWrapping: true,
             updateMethod: 'put',
             httpConfig: {},
-            defaultParams: undefined
+            defaultParams: undefined,
+            extensions: []
         };
 
+        /**
+         * Enables or disables root wrapping by default for RailsResources
+         * Defaults to true.
+         * @param {boolean} value true to enable root wrapping, false to disable
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.rootWrapping = function (value) {
             defaultOptions.rootWrapping = value;
             return this;
         };
 
+        /**
+         * Configures what HTTP operation should be used for update by default for RailsResources.
+         * Defaults to 'put'
+         * @param value
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.updateMethod = function (value) {
             defaultOptions.updateMethod = value;
             return this;
         };
 
+        /**
+         * Configures default HTTP configuration operations for all RailsResources.
+         *
+         * @param {Object} value See $http for available configuration options.
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.httpConfig = function (value) {
             defaultOptions.httpConfig = value;
             return this;
         };
 
+        /**
+         * Configures default HTTP query parameters for all RailsResources.
+         *
+         * @param {Object} value Object of key/value pairs representing the HTTP query parameters for all HTTP operations.
+         * @returns {RailsResourceProvider} The provider instance
+         */
         this.defaultParams = function (value) {
             defaultOptions.defaultParams = value;
             return this;
         };
 
-        this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector',
-            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector) {
+        /**
+         * List of RailsResource extensions to include by default.
+         *
+         * @param {...string} extensions One or more extension names to include
+         * @returns {*}
+         */
+        this.extensions = function () {
+            defaultOptions.extensions = [];
+            angular.forEach(arguments, function (value) {
+                defaultOptions.extensions = defaultOptions.extensions.concat(value);
+            });
+            return this;
+        };
 
-                function appendPath(url, path) {
-                    if (path) {
-                        if (path[0] !== '/') {
-                            url += '/';
-                        }
-
-                        url += path;
-                    }
-
-                    return url;
-                }
-
-                function forEachDependency(list, callback) {
-                    var dependency;
-
-                    for (var i = 0, len = list.length; i < len; i++) {
-                        dependency = list[i];
-
-                        if (angular.isString(dependency)) {
-                            dependency = list[i] = RailsResourceInjector.getDependency(dependency);
-                        }
-
-                        callback(dependency);
-                    }
-                }
+        this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrappingTransformer', 'railsRootWrappingInterceptor', 'RailsResourceInjector', 'RailsInflector',
+            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrappingTransformer, railsRootWrappingInterceptor, RailsResourceInjector, RailsInflector) {
 
                 function RailsResource(value) {
                     var instance = this;
+                    this.$snapshots = [];
+
                     if (value) {
                         var immediatePromise = function (data) {
                             return {
@@ -96,7 +111,7 @@
                                     this.response = callback(this.response, this.resource, this.context);
                                     return immediatePromise(this.response);
                                 }
-                            }
+                            };
                         };
 
                         var data = this.constructor.callInterceptors(immediatePromise({data: value}), this).response.data;
@@ -104,24 +119,87 @@
                     }
                 }
 
-                RailsResource.extend = function (child) {
-                    // Extend logic copied from CoffeeScript generated code
-                    var __hasProp = {}.hasOwnProperty, parent = this;
-                    for (var key in parent) {
-                        if (__hasProp.call(parent, key)) child[key] = parent[key];
+                /**
+                 * Extends the RailsResource to the child constructor function making the child constructor a subclass of
+                 * RailsResource.  This is modeled off of CoffeeScript's class extend function.  All RailsResource
+                 * class properties defined are copied to the child class and the child's prototype chain is configured
+                 * to allow instances of the child class to have all of the instance methods of RailsResource.
+                 *
+                 * Like CoffeeScript, a __super__ property is set on the child class to the parent resource's prototype chain.
+                 * This is done to allow subclasses to extend the functionality of instance methods and still
+                 * call back to the original method using:
+                 *
+                 *     Class.__super__.method.apply(this, arguments);
+                 *
+                 * @param {function} child Child constructor function
+                 * @returns {function} Child constructor function
+                 */
+                RailsResource.extendTo = function (child) {
+                    angular.forEach(this, function (value, key) {
+                        child[key] = value;
+                    });
+
+                    if (angular.isArray(this.$modules)) {
+                        child.$modules = this.$modules.slice(0);
                     }
 
                     function ctor() {
                         this.constructor = child;
                     }
 
-                    ctor.prototype = parent.prototype;
+                    ctor.prototype = this.prototype;
                     child.prototype = new ctor();
-                    child.__super__ = parent.prototype;
+                    child.__super__ = this.prototype;
                     return child;
                 };
 
-                // allow calling configure multiple times to set configuration options and override values from inherited resources
+                /**
+                 * Copies a mixin's properties to the resource.
+                 *
+                 * If module is a String then we it will be loaded using Angular's dependency injection.  If the name is
+                 * not valid then Angular will throw an error.
+                 *
+                 * @param {...String|function|Object} mixins The mixin or name of the mixin to add.
+                 * @returns {RailsResource} this
+                 */
+                RailsResource.extend = function () {
+                    angular.forEach(arguments, function (mixin) {
+                        addMixin(this, this, mixin, function (Resource, mixin) {
+                            if (angular.isFunction(mixin.extended)) {
+                                mixin.extended(Resource);
+                            }
+                        });
+                    }, this);
+
+                    return this;
+                };
+
+                /**
+                 * Copies a mixin's properties to the resource's prototype chain.
+                 *
+                 * If module is a String then we it will be loaded using Angular's dependency injection.  If the name is
+                 * not valid then Angular will throw an error.
+                 *
+                 * @param {...String|function|Object} mixins The mixin or name of the mixin to add
+                 * @returns {RailsResource} this
+                 */
+                RailsResource.include = function () {
+                    angular.forEach(arguments, function (mixin) {
+                        addMixin(this, this.prototype, mixin, function (Resource, mixin) {
+                            if (angular.isFunction(mixin.included)) {
+                                mixin.included(Resource);
+                            }
+                        });
+                    }, this);
+
+                    return this;
+                };
+
+                /**
+                 * Sets configuration options.  This method may be called multiple times to set additional options or to
+                 * override previous values (such as the case with inherited resources).
+                 * @param cfg
+                 */
                 RailsResource.configure = function (cfg) {
                     cfg = cfg || {};
 
@@ -141,12 +219,7 @@
                     this.config.responseInterceptors = cfg.responseInterceptors ? cfg.responseInterceptors.slice(0) : [];
                     this.config.afterResponseInterceptors = cfg.afterResponseInterceptors ? cfg.afterResponseInterceptors.slice(0) : [];
 
-                    // strings and functions are not considered objects by angular.isObject()
-                    if (angular.isObject(cfg.serializer)) {
-                        this.config.serializer = cfg.serializer;
-                    } else {
-                        this.config.serializer = RailsResourceInjector.createService(cfg.serializer || railsSerializer());
-                    }
+                    this.config.serializer = RailsResourceInjector.getService(cfg.serializer || railsSerializer());
 
                     this.config.name = this.config.serializer.underscore(cfg.name);
 
@@ -157,10 +230,20 @@
 
                     this.config.urlBuilder = railsUrlBuilder(this.config.url);
                     this.config.resourceConstructor = this;
+
+                    this.extend.apply(this, loadExtensions((cfg.extensions || []).concat(defaultOptions.extensions)));
+
+                    angular.forEach(this.$mixins, function (mixin) {
+                        if (angular.isFunction(mixin.configure)) {
+                            mixin.configure(this.config, cfg);
+                        }
+                    }, this);
                 };
 
-                RailsResource.configure({});
-
+                /**
+                 * Configures the URL for the resource.
+                 * @param {String|function} url The url string or function.
+                 */
                 RailsResource.setUrl = function (url) {
                     this.configure({url: url});
                 };
@@ -388,7 +471,8 @@
                 };
 
                 RailsResource.prototype.isNew = function () {
-                    return this.id == null;
+                    return angular.isUndefined(this.id) ||
+                        this.id === null;
                 };
 
                 RailsResource.prototype.save = function () {
@@ -399,11 +483,11 @@
                     }
                 };
 
-                RailsResource['$delete'] = function (url) {
+                RailsResource.$delete = function (url) {
                     return this.processResponse($http['delete'](url, this.getHttpConfig()));
                 };
 
-                RailsResource.prototype['$delete'] = function (url) {
+                RailsResource.prototype.$delete = function (url) {
                     return this.processResponse($http['delete'](url, this.constructor.getHttpConfig()));
                 };
 
@@ -413,6 +497,70 @@
                 };
 
                 return RailsResource;
+
+                function appendPath(url, path) {
+                    if (path) {
+                        if (path[0] !== '/') {
+                            url += '/';
+                        }
+
+                        url += path;
+                    }
+
+                    return url;
+                }
+
+                function forEachDependency(list, callback) {
+                    var dependency;
+
+                    for (var i = 0, len = list.length; i < len; i++) {
+                        dependency = list[i];
+
+                        if (angular.isString(dependency)) {
+                            dependency = list[i] = RailsResourceInjector.getDependency(dependency);
+                        }
+
+                        callback(dependency);
+                    }
+                }
+
+                function addMixin(Resource, destination, mixin, callback) {
+                    var excludedKeys = ['included', 'extended,', 'configure'];
+
+                    if (!Resource.$mixins) {
+                        Resource.$mixins = [];
+                    }
+
+                    if (angular.isString(mixin)) {
+                        mixin = RailsResourceInjector.getDependency(mixin);
+                    }
+
+                    if (mixin && Resource.$mixins.indexOf(mixin) === -1) {
+                        angular.forEach(mixin, function (value, key) {
+                            if (excludedKeys.indexOf(key) === -1) {
+                                destination[key] = value;
+                            }
+                        });
+
+                        Resource.$mixins.push(mixin);
+
+                        if (angular.isFunction(callback)) {
+                            callback(Resource, mixin);
+                        }
+                    }
+                }
+
+                function loadExtensions(extensions) {
+                    var modules = [];
+
+                    angular.forEach(extensions, function (extensionName) {
+                        extensionName = 'RailsResource' + extensionName.charAt(0).toUpperCase() + extensionName.slice(1) + 'Mixin';
+
+                        modules.push(RailsResourceInjector.getDependency(extensionName));
+                    });
+
+                    return modules;
+                }
             }];
     });
 
@@ -422,11 +570,11 @@
                 Resource.__super__.constructor.apply(this, arguments);
             }
 
-            RailsResource.extend(Resource);
+            RailsResource.extendTo(Resource);
             Resource.configure(config);
 
             return Resource;
-        }
+        };
     }]);
 
 }());

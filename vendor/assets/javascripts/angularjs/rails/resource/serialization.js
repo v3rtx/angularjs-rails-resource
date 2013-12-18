@@ -303,9 +303,9 @@
                 Serializer.prototype.getDeserializedAttributeName = function (attributeName) {
                     var camelizedName = this.camelize(attributeName);
 
-                    camelizedName = this.deserializeMappings[attributeName]
-                        || this.deserializeMappings[camelizedName]
-                        || camelizedName;
+                    camelizedName = this.deserializeMappings[attributeName] ||
+                        this.deserializeMappings[camelizedName] ||
+                        camelizedName;
 
                     if (this.isExcludedFromDeserialization(attributeName) || this.isExcludedFromDeserialization(camelizedName)) {
                         return undefined;
@@ -527,7 +527,7 @@
                         return this.options.camelize(value);
                     }
                     return value;
-                }
+                };
 
                 return Serializer;
             }

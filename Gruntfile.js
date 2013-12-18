@@ -1,10 +1,12 @@
 module.exports = function(grunt) {
-
   var path = require('path');
 
   var srcFolder = 'vendor/assets/javascripts/angularjs/rails/resource/',
       srcFiles = ["index.js", "utils/**/*.js", "serialization.js", "resource.js"].map(function(glob) {
         return srcFolder + glob;
+      }),
+      extensionFiles = ["extensions/**/*.js"].map(function(glob) {
+          return srcFolder + glob;
       });
 
   grunt.initConfig({
@@ -18,7 +20,15 @@ module.exports = function(grunt) {
       ' */\n'
     },
     dirs: {
-      dest: './'
+      dest: 'build'
+    },
+    clean: ['<%= dirs.dest %>'],
+    copy: {
+      extensions: {
+        files: [
+          {expand: true, flatten: true, src: extensionFiles, dest: '<%= dirs.dest %>/extensions'}
+        ]
+      }
     },
     concat: {
       options: {
@@ -30,25 +40,32 @@ module.exports = function(grunt) {
         options: {
           process: function(src, filepath) {
             return src.replace(/^\/\/= require.*\n/gm, '');
-          },
-        },
+          }
+        }
       }
     },
-    zip: {
-      '<%= dirs.dest %>/angularjs-rails-resource.zip': ['<%= dirs.dest %>/<%= pkg.name %>.js', '<%= dirs.dest %>/<%= pkg.name %>.min.js']
+    compress: {
+      dist: {
+        options: {
+          archive: '<%= dirs.dest %>/angularjs-rails-resource.zip'
+        },
+        files: [
+          {expand: true, cwd: '<%= dirs.dest %>', src: ['**/*.js']}
+        ]
+      }
     },
     uglify: {
       options: {
         banner: "<%= meta.banner %>"
       },
       dist: {
-        files: {
-          '<%= dirs.dest %>/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
-        }
+        files: [
+          {expand: true, cwd: '<%= dirs.dest %>', src: ['**/*.js'], dest: '<%= dirs.dest %>', ext: '.min.js'}
+        ]
       }
     },
     jshint: {
-      files: ['gruntfile.js'],
+      files: ['gruntfile.js'].concat(srcFiles),
       options: {
         // options here to override JSHint defaults
         globals: {
@@ -58,7 +75,7 @@ module.exports = function(grunt) {
     },
     watch: {
       files: ['<%= jshint.files %>'],
-      tasks: ['jshint', 'qunit']
+      tasks: ['jshint']
     }
   });
 
@@ -66,9 +83,11 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-zip');
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-contrib-compress');
 
-  grunt.registerTask('default', ['jshint', 'concat', 'uglify', 'zip']);
+  grunt.registerTask('default', ['jshint', 'clean', 'concat', 'copy', 'uglify', 'compress']);
 
   // Provides the "bump" task.
   grunt.registerTask('bump', 'Increment version number', function() {

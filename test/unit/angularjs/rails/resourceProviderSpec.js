@@ -40,4 +40,24 @@ describe('resource provider factory config', function () {
             expect(railsResourceFactory({name: 'test', url: '/test'}).config.defaultParams).toEqualData({'test': '1'});
         });
     });
+
+    it('should allow setting default extensions globally', function () {
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.extensions('snapshots')).toBe(RailsResourceProvider);
+        });
+
+        inject(function (railsResourceFactory) {
+            expect(railsResourceFactory({name: 'test', url: '/test'}).prototype.snapshot).toBeDefined();
+        });
+    });
+
+    it('should allow setting default extensions using an array', function () {
+        module('rails', function (RailsResourceProvider) {
+            expect(RailsResourceProvider.extensions(['snapshots'])).toBe(RailsResourceProvider);
+        });
+
+        inject(function (railsResourceFactory) {
+            expect(railsResourceFactory({name: 'test', url: '/test'}).prototype.snapshot).toBeDefined();
+        });
+    });
 });

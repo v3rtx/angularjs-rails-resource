@@ -34,7 +34,7 @@ describe('railsResourceFactory', function () {
             $httpBackend.verifyNoOutstandingRequest();
         });
 
-        it('query should return resource object when response is single object', inject(function($httpBackend) {
+        it('query should return resource object when response is single object', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test').respond(200, {test: {abc: 'xyz'}});
@@ -49,9 +49,9 @@ describe('railsResourceFactory', function () {
 
             expect(result).toBeInstanceOf(Test);
             expect(result).toEqualData({abc: 'xyz'});
-        }));
+        });
 
-        it('query should return no data on 204', inject(function($httpBackend) {
+        it('query should return no data on 204', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test').respond(204);
@@ -64,27 +64,27 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(result).toBeUndefined();
-        }));
+        });
 
-        it('query should add parameter abc=1', inject(function($httpBackend) {
+        it('query should add parameter abc=1', function () {
             var promise;
 
             $httpBackend.expectGET('/test?abc=1').respond(200, {test: {abc: 'xyz'}});
 
             expect(promise = Test.query({abc: '1'})).toBeDefined();
             $httpBackend.flush();
-        }));
+        });
 
-        it('query should add parameters abc=1 & xyz=2', inject(function($httpBackend) {
+        it('query should add parameters abc=1 & xyz=2', function () {
             var promise;
 
             $httpBackend.expectGET('/test?abc=1&xyz=2').respond(200, {test: {abc: 'xyz'}});
 
             expect(promise = Test.query({abc: '1', xyz: 2})).toBeDefined();
             $httpBackend.flush();
-        }));
+        });
 
-        it('query with default params should add parameter abc=1', inject(function($httpBackend) {
+        it('query with default params should add parameter abc=1', function () {
             var promise, resource, defaultParamsConfig = {};
 
             $httpBackend.expectGET('/test?abc=1').respond(200, {test: {abc: 'xyz'}});
@@ -96,9 +96,9 @@ describe('railsResourceFactory', function () {
             expect(promise = resource.query()).toBeDefined();
 
             $httpBackend.flush();
-        }));
+        });
 
-        it('get should return resource object when response is 200', inject(function($httpBackend) {
+        it('get should return resource object when response is 200', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
@@ -113,9 +113,9 @@ describe('railsResourceFactory', function () {
 
             expect(result).toBeInstanceOf(Test);
             expect(result).toEqualData({id: 123, abc: 'xyz'});
-        }));
+        });
 
-        it('get should work with id as string as well', inject(function($httpBackend) {
+        it('get should work with id as string as well', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
@@ -130,9 +130,9 @@ describe('railsResourceFactory', function () {
 
             expect(result).toBeInstanceOf(Test);
             expect(result).toEqualData({id: 123, abc: 'xyz'});
-        }));
+        });
 
-        it('get should call failure callback when 404', inject(function($httpBackend) {
+        it('get should call failure callback when 404', function () {
             var promise, success = false, failure = false;
 
             $httpBackend.expectGET('/test/123').respond(404);
@@ -149,9 +149,9 @@ describe('railsResourceFactory', function () {
 
             expect(success).toBe(false);
             expect(failure).toBe(true);
-        }));
+        });
 
-        it('get with default params should add parameter abc=1', inject(function($httpBackend) {
+        it('get with default params should add parameter abc=1', function () {
             var promise, resource, defaultParamsConfig = {};
 
             $httpBackend.expectGET('/test/123?abc=1').respond(200, {test: {abc: 'xyz'}});
@@ -163,9 +163,9 @@ describe('railsResourceFactory', function () {
             expect(promise = resource.get(123)).toBeDefined();
 
             $httpBackend.flush();
-        }));
+        });
 
-        it('should be able to create new instance and save it', inject(function($httpBackend) {
+        it('should be able to create new instance and save it', function () {
             var data = new Test({abcDef: 'xyz'});
 
             $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
@@ -173,18 +173,18 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz'});
-        }));
+        });
 
-        it("should return a promise when calling save", inject(function($httpBackend) {
+        it("should return a promise when calling save", function () {
             var promise, data;
 
             data = new Test({abc_def: 'xyz'});
             $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
             expect(promise = data.save()).toBeDefined();
             $httpBackend.flush()
-        }));
+        });
 
-        it('should be able to create new instance and save it using save', inject(function($httpBackend) {
+        it('should be able to create new instance and save it using save', function () {
             var data = new Test({abcDef: 'xyz'});
 
             $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
@@ -192,9 +192,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz'});
-        }));
+        });
 
-        it('should be able to create new instance and update it', inject(function($httpBackend) {
+        it('should be able to create new instance and update it', function () {
             var data = new Test({abcDef: 'xyz'});
 
             $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
@@ -209,9 +209,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
-        }));
+        });
 
-         it('should be able to create new instance and update it using save', inject(function($httpBackend) {
+         it('should be able to create new instance and update it using save', function () {
             var data = new Test({abcDef: 'xyz'});
 
             $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {test: {id: 123, abc_def: 'xyz'}});
@@ -226,9 +226,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
-        }));
+        });
 
-        it('should be able to create new instance and update it using PATCH', inject(function($httpBackend) {
+        it('should be able to create new instance and update it using PATCH', function () {
             var promise, Resource, data, defaultParamsConfig = {};
 
             angular.copy(config, defaultParamsConfig);
@@ -249,9 +249,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
-        }));
+        });
 
-        it('should be able to create new instance and update it using save using PATCH', inject(function($httpBackend) {
+        it('should be able to create new instance and update it using save using PATCH', function () {
             var promise, Resource, data, defaultParamsConfig = {};
 
             angular.copy(config, defaultParamsConfig);
@@ -272,10 +272,10 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(data).toEqualData({id: 123, abcDef: 'xyz', xyz: 'abc', extra: 'test'});
-        }));
+        });
 
 
-        it('create with default params should add parameter abc=1', inject(function($httpBackend) {
+        it('create with default params should add parameter abc=1', function () {
             var promise, Resource, data, defaultParamsConfig = {};
 
             $httpBackend.expectPOST('/test?abc=1', {test: {}}).respond(200, {test: {abc: 'xyz'}});
@@ -288,9 +288,9 @@ describe('railsResourceFactory', function () {
             data.create();
 
             $httpBackend.flush();
-        }));
+        });
 
-        it('should be able to get resource and update it', inject(function($httpBackend) {
+        it('should be able to get resource and update it', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz', xyz: 'abcd'}});
@@ -313,9 +313,9 @@ describe('railsResourceFactory', function () {
 
             // abc was originally set on the object so it should still be there after the update
             expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
-        }));
+        });
 
-        it('update should handle 204 response', inject(function($httpBackend) {
+        it('update should handle 204 response', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
@@ -337,9 +337,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
 
             expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abc'});
-        }));
+        });
 
-        it('should be able to delete instance returned from get', inject(function($httpBackend) {
+        it('should be able to delete instance returned from get', function () {
             var promise, result;
 
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
@@ -358,9 +358,9 @@ describe('railsResourceFactory', function () {
             $httpBackend.expectDELETE('/test/123').respond(204);
             result.remove();
             $httpBackend.flush();
-        }));
+        });
 
-        it('delete with default params should add parameter abc=1', inject(function($httpBackend) {
+        it('delete with default params should add parameter abc=1', function () {
             var promise, Resource, data, defaultParamsConfig = {};
 
             $httpBackend.expectDELETE('/test/123?abc=1').respond(204);
@@ -374,7 +374,7 @@ describe('railsResourceFactory', function () {
             data.remove();
 
             $httpBackend.flush();
-        }));
+        });
 
         it('should transform attributes on build', function() {
             var test = new Test({id: 123, abc_def: "T"});
@@ -400,7 +400,7 @@ describe('railsResourceFactory', function () {
         });
 
         angular.forEach(['post', 'put', 'patch'], function (method) {
-            it('should be able to ' + method + ' to arbitrary url', inject(function($httpBackend) {
+            it('should be able to ' + method + ' to arbitrary url', function () {
                 var promise, result = {};
 
                 promise = Test['$' + method]('/xyz', {id: 123, abc: 'xyz', xyz: 'abc'});
@@ -414,9 +414,9 @@ describe('railsResourceFactory', function () {
 
                 // abc was originally set on the object so it should still be there after the update
                 expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
-            }));
+            });
 
-            it('should be able to ' + method + ' instance to arbitrary url', inject(function($httpBackend) {
+            it('should be able to ' + method + ' instance to arbitrary url', function () {
                 var test = new Test({id: 123, abc: 'xyz', xyz: 'abc'});
                 $httpBackend['expect' + angular.uppercase(method)]('/xyz', {test: {id: 123, abc: 'xyz', xyz: 'abc'}}).respond(200, {test: {id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'}});
                 test['$' + method]('/xyz');
@@ -424,7 +424,7 @@ describe('railsResourceFactory', function () {
 
                 // abc was originally set on the object so it should still be there after the update
                 expect(test).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
-            }));
+            });
         });
 
         it('should be able to $post an array of resources', function () {
@@ -456,7 +456,7 @@ describe('railsResourceFactory', function () {
             $httpBackend.verifyNoOutstandingRequest();
         });
 
-        it('query should return array of resource objects when result is an array', inject(function($httpBackend) {
+        it('query should return array of resource objects when result is an array', function () {
             var promise, result;
 
             $httpBackend.expectGET('/pluralTest').respond(200, {plural: [{abc: 'xyz'}, {xyz: 'abc'}]});
@@ -476,9 +476,9 @@ describe('railsResourceFactory', function () {
             expect(result[0]).toEqualData({abc: 'xyz'});
             expect(result[1]).toEqualData({xyz: 'abc'});
 
-        }));
+        });
 
-        it('query should return empty array when result is empty array', inject(function($httpBackend) {
+        it('query should return empty array when result is empty array', function () {
             var promise, result;
 
             $httpBackend.expectGET('/pluralTest').respond(200, {plural: []});
@@ -493,7 +493,7 @@ describe('railsResourceFactory', function () {
 
             expect(angular.isArray(result)).toBe(true);
             expect(result.length).toBe(0);
-        }));
+        });
     });
 
     describe('subclassing', function() {
@@ -513,6 +513,8 @@ describe('railsResourceFactory', function () {
 
               // @configure url: '/books', name: 'book'
               Book.configure({ url: '/books', name: 'book' });
+              Book.extend('RailsResourceSnapshotsMixin');
+              Book.extend({ bookProperty: 1});
 
               function Book() {
                   Book.__super__.constructor.apply(this, arguments);
@@ -582,5 +584,82 @@ describe('railsResourceFactory', function () {
             expect(carManual.id).toBe(1);
             expect(carManual.name).toBe('Honda CR-V');
         });
+
+        it('should have included properties on subclass', function () {
+            expect(CarManual.bookProperty).toBe(1);
+            expect(CarManual.prototype.snapshot).toBeDefined();
+        });
+    });
+
+    describe('mixins', function () {
+        var railsResourceFactory;
+
+        beforeEach(inject(function (_railsResourceFactory_) {
+            railsResourceFactory = _railsResourceFactory_;
+        }));
+
+        it('should include extensions as part of initial configure', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test', extensions: ['snapshots']});
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should only include extensions once', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test', extensions: ['snapshots', 'snapshots']});
+            expect(Resource.$mixins.length).toBe(2); // Snapshots extension includes additional mixin
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should only include module once', function () {
+            var mixin = {test: 1}, Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.include(mixin);
+            Resource.include(mixin);
+            expect(Resource.$mixins.length).toBe(1);
+        });
+
+        it('should include extensions as part of second configure call', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.configure({extensions: ['snapshots']});
+            expect(Resource.prototype.snapshot).toBeDefined();
+        });
+
+        it('should throw an error if extension is not valid', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            expect(function () {
+                Resource.configure({extensions: ['invalid']});
+            }).toThrow();
+        });
+
+        it('should include object properties as class properties', function () {
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.extend({
+                classMethod: function () {},
+                classProperty: 1
+            });
+            expect(Resource.classMethod).toBeDefined();
+            expect(Resource.classProperty).toBe(1);
+        });
+
+        it('should include class properties', function () {
+            function Mixin() {}
+            Mixin.classMethod = function () {};
+            Mixin.classProperty = 1;
+
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.extend(Mixin);
+            expect(Resource.classMethod).toBe(Mixin.classMethod);
+            expect(Resource.classProperty).toBe(Mixin.classProperty);
+        });
+
+        it('should include instance properties', function () {
+            function Mixin() {}
+            Mixin.instanceMethod = function () {};
+            Mixin.instanceProperty = 1;
+
+            var Resource = railsResourceFactory({name: 'test', url: '/test'});
+            Resource.include(Mixin);
+            expect(Resource.prototype.instanceMethod).toBe(Mixin.instanceMethod);
+            expect(Resource.prototype.instanceProperty).toBe(Mixin.instanceProperty);
+        });
+
     });
 });
