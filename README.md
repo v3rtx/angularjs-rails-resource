@@ -26,15 +26,9 @@ Book.query({title: 'Moby Dick'}).then(function (books) {
 You can inject the <code>railsSerializerProvider</code> into your application config function and override the <code>underscore</code>
 and <code>camelize</code> functions:
 ````javascript
-angular.module('app').config(function (railsSerializerFactory) {
-    railsSerializerProvider.
-        underscore(function (name) {
-            return name;
-        }).
-        camelize(function (name) {
-            return name;
-        });
-});
+angular.module('app').config(["railsSerializerProvider", function(railsSerializerProvider) {
+    railsSerializerProvider.underscore(angular.identity).camelize(angular.identity);
+}]);
 ````
 
 ## Installation
@@ -88,7 +82,10 @@ settings for the new resource.  The factory function returns a new class that is
 ```javascript
 angular.module('book.services', ['rails']);
 angular.module('book.services').factory('Book', ['railsResourceFactory', function (railsResourceFactory) {
-    return railsResourceFactory({url: '/books', name: 'book'});
+    return railsResourceFactory({
+        url: '/books',
+        name: 'book'
+    });
 }]);
 ```
 
@@ -129,8 +126,10 @@ Resource.configure(config);
 angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
     $scope.searching = true;
     // Find all books matching the title
-    $scope.books = Book.query({title: title});
-    $scope.books.then(function(results) {
+    $scope.books = Book.query({
+        title: title
+    });
+    $scope.books.then(function (results) {
         $scope.searching = false;
     }, function (error) {
         $scope.searching = false;
@@ -143,7 +142,11 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
     });
 
     // Create a book and save it
-    new Book({title: 'Gardens of the Moon', author: 'Steven Erikson', isbn: '0-553-81957-7'}).create();
+    new Book({
+        title: 'Gardens of the Moon',
+        author: 'Steven Erikson',
+        isbn: '0-553-81957-7'
+    }).create();
 }]);
 ```
 
@@ -163,7 +166,7 @@ Author = railsResourceFactory({
 ```
 You can also specify a serializer as a factory and inject it as a dependency.
 ```javascript
-angular.module('rails').factory('BookSerializer', function(railsSerializer) {
+angular.module('rails').factory('BookSerializer', function (railsSerializer) {
     return railsSerializer(function () {
         this.exclude('publicationDate', 'relatedBooks');
         this.rename('ISBN', 'isbn');
@@ -180,7 +183,6 @@ Book = railsResourceFactory({
     name: 'book',
     serializer: 'BookSerializer'
 });
-
 ```
 
 

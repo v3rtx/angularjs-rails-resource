@@ -263,8 +263,17 @@
                 Serializer.prototype.getSerializedAttributeName = function (attributeName) {
                     var mappedName = this.serializeMappings[attributeName] || attributeName;
 
-                    if (this.isExcludedFromSerialization(attributeName) || this.isExcludedFromSerialization(mappedName)) {
-                        return undefined;
+                    var mappedNameExcluded = this.isExcludedFromSerialization(mappedName),
+                        attributeNameExcluded = this.isExcludedFromSerialization(attributeName);
+
+                    if(this.options.excludeByDefault) {
+                        if(mappedNameExcluded && attributeNameExcluded) {
+                            return undefined;
+                        }
+                    } else {
+                        if (mappedNameExcluded || attributeNameExcluded) {
+                            return undefined;
+                        }
                     }
 
                     return this.underscore(mappedName);
