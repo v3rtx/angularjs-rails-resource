@@ -11,6 +11,7 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
     meta: {
       banner: '/**\n' +
       ' * <%= pkg.description %>\n' +
@@ -19,10 +20,13 @@ module.exports = function(grunt) {
       ' * @author <%= pkg.author %>\n' +
       ' */\n'
     },
+
     dirs: {
       dest: 'build'
     },
+
     clean: ['<%= dirs.dest %>'],
+
     copy: {
       extensions: {
         files: [
@@ -30,6 +34,7 @@ module.exports = function(grunt) {
         ]
       }
     },
+
     concat: {
       options: {
         banner: "<%= meta.banner %>"
@@ -44,6 +49,7 @@ module.exports = function(grunt) {
         }
       }
     },
+
     compress: {
       dist: {
         options: {
@@ -54,6 +60,7 @@ module.exports = function(grunt) {
         ]
       }
     },
+
     uglify: {
       options: {
         banner: "<%= meta.banner %>"
@@ -64,6 +71,7 @@ module.exports = function(grunt) {
         ]
       }
     },
+
     jshint: {
       files: ['gruntfile.js'].concat(srcFiles),
       options: {
@@ -73,9 +81,19 @@ module.exports = function(grunt) {
         }
       }
     },
+
     watch: {
       files: ['<%= jshint.files %>'],
       tasks: ['jshint']
+    },
+
+    bump: {
+      options: {
+        files: ['package.json', 'bower.json'],
+        commit: false,
+        createTag: false,
+        push: false
+      }
     }
   });
 
@@ -86,29 +104,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-compress');
+  grunt.loadNpmTasks('grunt-bump');
 
   grunt.registerTask('default', ['jshint', 'clean', 'concat', 'copy', 'uglify', 'compress']);
-
-  // Provides the "bump" task.
-  grunt.registerTask('bump', 'Increment version number', function() {
-    var versionType = grunt.option('type');
-    function bumpVersion(version, versionType) {
-      var type = {patch: 2, minor: 1, major: 0},
-          parts = version.split('.'),
-          idx = type[versionType || 'patch'];
-      parts[idx] = parseInt(parts[idx], 10) + 1;
-      while(++idx < parts.length) { parts[idx] = 0; }
-      return parts.join('.');
-    }
-    var version;
-    function updateFile(file) {
-      var json = grunt.file.readJSON(file);
-      version = json.version = bumpVersion(json.version, versionType || 'patch');
-      grunt.file.write(file, JSON.stringify(json, null, '  '));
-    }
-    updateFile('package.json');
-    updateFile('bower.json');
-    grunt.log.ok('Version bumped to ' + version);
-  });
-
 };
