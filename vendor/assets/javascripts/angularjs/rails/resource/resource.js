@@ -33,6 +33,7 @@
             updateMethod: 'put',
             httpConfig: {},
             defaultParams: undefined,
+            underscoreParams: true,
             extensions: []
         };
 
@@ -77,6 +78,16 @@
          */
         this.defaultParams = function (value) {
             defaultOptions.defaultParams = value;
+            return this;
+        };
+
+        /**
+         * Configures whether or not underscore query parameters
+         * @param {boolean} value true to underscore.  Defaults to true.
+         * @returns {RailsResourceProvider} The provider instance
+         */
+        this.underscoreParams = function (value) {
+            defaultOptions.underscoreParams = value;
             return this;
         };
 
@@ -213,6 +224,7 @@
                     this.config.httpConfig = cfg.httpConfig || defaultOptions.httpConfig;
                     this.config.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, this.config.httpConfig.headers || {});
                     this.config.defaultParams = cfg.defaultParams || defaultOptions.defaultParams;
+                    this.config.underscoreParams = cfg.underscoreParams || defaultOptions.underscoreParams;
                     this.config.updateMethod = (cfg.updateMethod || defaultOptions.updateMethod).toLowerCase();
 
                     this.config.requestTransformers = cfg.requestTransformers ? cfg.requestTransformers.slice(0) : [];
@@ -359,6 +371,27 @@
                     return this.callAfterInterceptors(promise);
                 };
 
+                /**
+                 * Processes query parameters before request.  You can override to modify
+                 * the query params or return a new object.
+                 *
+                 * @param {Object} queryParams - The query parameters for the request
+                 * @returns {Object} The query parameters for the request
+                 */
+                RailsResource.processParameters = function (queryParams) {
+                    var newParams = {};
+
+                    if (angular.isObject(queryParams) && this.config.underscoreParams) {
+                        angular.forEach(queryParams, function (v, k) {
+                            newParams[this.config.serializer.underscore(k)] = v
+                        }, this);
+
+                        return newParams;
+                    }
+
+                    return queryParams;
+                };
+
                 RailsResource.getParameters = function (queryParams) {
                     var params;
 
@@ -370,7 +403,7 @@
                         params = angular.extend(params || {}, queryParams);
                     }
 
-                    return params;
+                    return this.processParameters(params);
                 };
 
                 RailsResource.getHttpConfig = function (queryParams) {
