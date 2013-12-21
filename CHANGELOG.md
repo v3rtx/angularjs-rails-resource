@@ -1,11 +1,21 @@
 <a name="1.0.0"></a>
 # 1.0.0
+## Deprecations
+- <code>requestTransformers</code>, <code>responseInterceptors</code>, <code>afterResponseInterceptors</code> have been replaced with
+ a single <code>interceptors</code> chain.
+- <code>beforeRequest</code> - Use <code>interceptBeforeRequestWrapping</code>
+- <code>beforeResponse</code> - Use <code>interceptResponse</code>
+- <code>afterResponse</code> - Use <code>interceptAfterResponse</code>
+
 ## Bug Fixes
 
 ## Features
 - Added <code>configure</code> function to allow changing configuration options after the resource has been initially configured.
 - Separated out RailsResource into separate service to allow subclassing without using the factories.
-- Added snapshot and rollback extension, be sure to check the [README](README.md#serializers) for details.
+- Added mixin capability, see [README](README.md#mixins) for details
+- Added snapshot and rollback extension, see [README](README.md#serializers) for details.
+- Added <code>underscoreParams</code> configuration option to allow turning off parameter underscore renaming.
+- Added <code>fullResponse</code> configuration option to allow returning the full $http response for promise resolution.
 
 ## Breaking Changes
 - <code>railsResourceFactoryProvider</code> settings have been moved to <code>RailsResourceProvider</code>
@@ -16,7 +26,14 @@
     - <code>rootName</code> was renamed <code>name</code>
     - <code>rootPluralName</code> was renamed <code>pluralName</code>
 - Query parameters were not underscored previously.  We are now underscoring parameters by default.
-The configuration option <code>underscoreParams</code> can be set to false to disable the renaming.
+    The configuration option <code>underscoreParams</code> can be set to false to disable the renaming.
+- Replaced <code>railsRootWrappingTransformer</code> and <code>railsRootWrappingInterceptor</code> with <code>railsRootWrapper</code>
+    that has wrap & unwrap methods.  This eliminates the need for using promises during resource construction to handle unwrapping
+    data passed into the constructor.
+- Resource constructor no longer executes response interceptors.  If you need to customize the constructor you should look
+    at using subclassing instead.
+- <code>processResponse</code>, <code>transformData</code>, <code>callInterceptors</code> have all been removed as part of rewriting
+    the request / response handling.
 
 <a name="1.0.0-pre.3"></a>
 # 1.0.0-pre.3

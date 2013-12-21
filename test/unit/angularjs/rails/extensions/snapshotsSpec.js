@@ -175,8 +175,6 @@ describe('RailsResource.snapshots', function () {
         book.rollback();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
     });
 
     it('should roll back to the first snapshot for -1', function () {
