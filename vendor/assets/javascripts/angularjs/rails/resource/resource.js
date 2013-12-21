@@ -220,11 +220,11 @@
 
                     this.config = {};
                     this.config.url = cfg.url;
-                    this.config.rootWrapping = cfg.rootWrapping === undefined ? defaultOptions.rootWrapping : cfg.rootWrapping; // using undefined check because config.rootWrapping || true would be true when config.rootWrapping === false
+                    this.config.rootWrapping = booleanParam(cfg.rootWrapping, defaultOptions.rootWrapping); // using undefined check because config.rootWrapping || true would be true when config.rootWrapping === false
                     this.config.httpConfig = cfg.httpConfig || defaultOptions.httpConfig;
                     this.config.httpConfig.headers = angular.extend({'Accept': 'application/json', 'Content-Type': 'application/json'}, this.config.httpConfig.headers || {});
                     this.config.defaultParams = cfg.defaultParams || defaultOptions.defaultParams;
-                    this.config.underscoreParams = cfg.underscoreParams || defaultOptions.underscoreParams;
+                    this.config.underscoreParams = booleanParam(cfg.underscoreParams, defaultOptions.underscoreParams);
                     this.config.updateMethod = (cfg.updateMethod || defaultOptions.updateMethod).toLowerCase();
 
                     this.config.requestTransformers = cfg.requestTransformers ? cfg.requestTransformers.slice(0) : [];
@@ -593,6 +593,10 @@
                     });
 
                     return modules;
+                }
+
+                function booleanParam(value, defaultValue) {
+                    return angular.isUndefined(value) ? defaultValue : value;
                 }
             }];
     });
