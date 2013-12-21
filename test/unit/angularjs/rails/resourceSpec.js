@@ -84,6 +84,25 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
         });
 
+        it('query should underscore parameters abc_xyz=1 & test=2', function () {
+            var promise;
+
+            $httpBackend.expectGET('/test?abc_xyz=1&test=2').respond(200, {test: {abc: 'xyz'}});
+
+            expect(promise = Test.query({abcXyz: '1', test: 2})).toBeDefined();
+            $httpBackend.flush();
+        });
+
+        it('query should not underscore parameters abcXyz=1 & test=2', function () {
+            var promise;
+
+            $httpBackend.expectGET('/test?abcXyz=1&test=2').respond(200, {test: {abc: 'xyz'}});
+
+            Test.config.underscoreParams = false;
+            expect(promise = Test.query({abcXyz: '1', test: 2})).toBeDefined();
+            $httpBackend.flush();
+        });
+
         it('query with default params should add parameter abc=1', function () {
             var promise, resource, defaultParamsConfig = {};
 

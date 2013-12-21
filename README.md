@@ -202,6 +202,7 @@ defined on the resource can be called multiple times to adjust properties as nee
          * **Accept** - application/json
          * **Content-Type** - application/json
  * **defaultParams** *(optional)* - If the resource expects a default set of query params on every call you can specify them here.
+ * **underscoreParams** *(optional)* - Controls whether or not query parameters are converted from camel case to underscore.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
  * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
@@ -219,6 +220,7 @@ Each configuration option listed is exposed as a method on the provider that tak
 * rootWrapping - {function(boolean):RailsResourceProvider}
 * httpConfig - {function(object):RailsResourceProvider}
 * defaultParams - {function(object):RailsResourceProvider}
+* underscoreParams - {function(boolean):RailsResourceProvider}
 * updateMethod - {function(boolean):RailsResourceProvider}
 
 For example, to turn off the root wrapping application-wide and set the update method to PATCH:

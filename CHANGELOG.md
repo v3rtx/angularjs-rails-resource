@@ -4,7 +4,7 @@
 
 ## Features
 - Added <code>configure</code> function to allow changing configuration options after the resource has been initially configured.
-- Added snapshot and rollback, be sure to check the [README](README.md#serializers) for details.
+- Added snapshot and rollback extension, be sure to check the [README](README.md#serializers) for details.
 
 ## Breaking Changes
 - <code>railsResourceFactoryProvider</code> settings have been moved to <code>RailsResourceProvider</code>
@@ -14,6 +14,8 @@
     - <code>enableRootWrapping</code> was renamed <code>rootWrapping</code>
     - <code>rootName</code> was renamed <code>name</code>
     - <code>rootPluralName</code> was renamed <code>pluralName</code>
+- Query parameters were not underscored previously.  We are now underscoring parameters by default.
+The configuration option <code>underscoreParams</code> can be set to false to disable the renaming.
 
 <a name="0.2.3"></a>
 # 0.2.3
