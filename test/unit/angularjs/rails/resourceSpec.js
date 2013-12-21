@@ -97,8 +97,7 @@ describe('railsResourceFactory', function () {
             var promise;
 
             $httpBackend.expectGET('/test?abcXyz=1&test=2').respond(200, {test: {abc: 'xyz'}});
-
-            Test.config.underscoreParams = false;
+            Test = factory(angular.extend({underscoreParams: false}, config));
             expect(promise = Test.query({abcXyz: '1', test: 2})).toBeDefined();
             $httpBackend.flush();
         });
