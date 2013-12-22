@@ -383,7 +383,7 @@
 
                     if (angular.isObject(queryParams) && this.config.underscoreParams) {
                         angular.forEach(queryParams, function (v, k) {
-                            newParams[this.config.serializer.underscore(k)] = v
+                            newParams[this.config.serializer.underscore(k)] = v;
                         }, this);
 
                         return newParams;
