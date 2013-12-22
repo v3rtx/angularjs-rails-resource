@@ -102,6 +102,17 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
         });
 
+        it('Parameter underscoring should not modify the defaultParams.', function () {
+            var promise;
+
+            $httpBackend.expectGET('/test?abc_xyz=1').respond(200, {test: {abc: 'xyz'}});
+            Test = factory(angular.extend({defaultParams: {abcXyz: 1}}, config));
+            expect(promise = Test.query()).toBeDefined();
+            $httpBackend.flush();
+            expect(Test.config.defaultParams.abcXyz).toBeDefined();
+            expect(Test.config.defaultParams.abc_xyz).not.toBeDefined();
+        });
+
         it('query with default params should add parameter abc=1', function () {
             var promise, resource, defaultParamsConfig = {};
 
@@ -114,6 +125,21 @@ describe('railsResourceFactory', function () {
             expect(promise = resource.query()).toBeDefined();
 
             $httpBackend.flush();
+        });
+
+        it('query with default params and additional parameters should not modify default params', function () {
+            var promise, resource, defaultParamsConfig = {};
+
+            $httpBackend.expectGET('/test?abc=1&xyz=2').respond(200, {test: {abc: 'xyz'}});
+
+            angular.copy(config, defaultParamsConfig);
+            defaultParamsConfig.defaultParams = {abc: '1'};
+
+            resource = factory(defaultParamsConfig);
+            expect(promise = resource.query({xyz: '2'})).toBeDefined();
+
+            $httpBackend.flush();
+            expect(resource.config.defaultParams).toEqualData({abc: '1'});
         });
 
         it('get should return resource object when response is 200', function () {
