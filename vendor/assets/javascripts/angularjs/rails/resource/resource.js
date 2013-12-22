@@ -396,7 +396,9 @@
                     var params;
 
                     if (this.config.defaultParams) {
-                        params = this.config.defaultParams;
+                        // we need to clone it so we don't modify it when we add the additional
+                        // query params below
+                        params = angular.copy(this.config.defaultParams);
                     }
 
                     if (angular.isObject(queryParams)) {
