@@ -4,6 +4,7 @@
 
 ## Features
 - Added <code>configure</code> function to allow changing configuration options after the resource has been initially configured.
+- Separated out RailsResource into separate service to allow subclassing without using the factories.
 - Added snapshot and rollback extension, be sure to check the [README](README.md#serializers) for details.
 
 ## Breaking Changes
@@ -39,6 +40,7 @@ The configuration option <code>underscoreParams</code> can be set to false to di
 
 ## Features
 - Added <code>configure</code> function to allow changing configuration options after the resource has been initially configured.
+- Separated out RailsResource into separate service to allow subclassing without using the factories.
 
 ## Breaking Changes
 - <code>railsResourceFactoryProvider</code> settings have been moved to <code>RailsResourceProvider</code>
