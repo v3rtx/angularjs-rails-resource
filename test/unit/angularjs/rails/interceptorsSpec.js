@@ -1,6 +1,6 @@
 describe('interceptors', function () {
     'use strict';
-    var $q, $httpBackend, $rootScope, factory, Test, testInterceptor, testAfterInterceptor, testRequestTransformer,
+    var $q, $http, $httpBackend, $rootScope, factory, Test, testInterceptor, testAfterInterceptor, testRequestTransformer,
         deprecatedTestInterceptor, deprecatedTestAfterInterceptor,
         config = {
             url: '/test',
@@ -27,6 +27,7 @@ describe('interceptors', function () {
                 });
             }
         });
+
         angular.module('rails').factory('railsTestInterceptor', function () {
             return {
                 'response': function (response) {
@@ -35,6 +36,40 @@ describe('interceptors', function () {
                 },
                 'responseError': function (rejection) {
                     rejection.interceptorCalled = true;
+                    return $q.reject(rejection);
+                }
+            };
+        });
+
+        angular.module('rails').factory('asyncInterceptor', function () {
+            return {
+                'response': function (response) {
+                    return $http.get('/async').then(function (asyncResponse) {
+                        response.data.async = asyncResponse.data;
+                        return response;
+                    });
+                }
+            };
+        });
+
+        angular.module('rails').factory('saveIndicatorInterceptor', function () {
+            return {
+                'beforeRequest': function (httpConfig, resourceConstructor, context) {
+                    if (context && (httpConfig.method === 'put' || httpConfig.method === 'post')) {
+                        context.$savePending = true;
+                    }
+                    return httpConfig;
+                },
+                'afterResponse': function (result, resourceConstructor, context) {
+                    if (context) {
+                        context.$savePending = false;
+                    }
+                    return result;
+                },
+                'afterResponseError': function (rejection, resourceConstructor, context) {
+                    if (context) {
+                        context.$savePending = false;
+                    }
                     return $q.reject(rejection);
                 }
             };
@@ -60,10 +95,11 @@ describe('interceptors', function () {
 
     });
 
-    beforeEach(inject(function (_$q_, _$httpBackend_, _$rootScope_, railsResourceFactory,
+    beforeEach(inject(function (_$q_, _$http_, _$httpBackend_, _$rootScope_, railsResourceFactory,
                                 railsTestInterceptor, railsTestAfterInterceptor, railsTestRequestTransformer,
                                 deprecatedRailsTestInterceptor, deprecatedRailsTestAfterInterceptor) {
         $q = _$q_;
+        $http = _$http_;
         $httpBackend = _$httpBackend_;
         $rootScope = _$rootScope_;
         factory = railsResourceFactory;
@@ -546,6 +582,56 @@ describe('interceptors', function () {
 
             $httpBackend.flush();
             expect(transformerCalled).toBeTruthy();
+        });
+    });
+
+    describe('async interceptor', function () {
+        it('should execute both requests', function () {
+            var testResult;
+
+            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
+            $httpBackend.expectGET('/async').respond(200, {id: 1, value: true});
+
+            Test.addInterceptor('asyncInterceptor');
+            Test.get(123).then(function (result) {
+                testResult = result;
+            });
+
+            $httpBackend.flush();
+            expect(testResult).toEqualData({id: 123, abcDef: 'xyz', async: {id: 1, value: true}});
+        });
+
+        it('should fail if async operation fails', function () {
+            var testResult, testError;
+
+            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
+            $httpBackend.expectGET('/async').respond(500);
+
+            Test.addInterceptor('asyncInterceptor');
+            Test.get(123).then(function (result) {
+                testResult = result;
+            }, function (error) {
+                testError = error;
+            });
+
+            $httpBackend.flush();
+            expect(testResult).not.toBeDefined();
+            expect(testError).toBeDefined();
+        });
+    });
+
+    describe('multi-phase interceptor', function () {
+        it('should execute multiple success phases', function () {
+            var test = new Test({abcDef: 'xyz'});
+
+            Test.addInterceptor('saveIndicatorInterceptor');
+            $httpBackend.expectPOST('/test', {test: {abc_def: 'xyz'}}).respond(200, {id: 123, abc_def: 'xyz'});
+            $rootScope.$apply(function () {
+                test.save();
+            });
+            expect(test.$savePending).toEqual(true);
+            $httpBackend.flush();
+            expect(test.$savePending).toEqual(false);
         });
     });
 });

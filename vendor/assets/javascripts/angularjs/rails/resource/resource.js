@@ -283,7 +283,7 @@
                  * * requestError: Interceptors get called when a previous interceptor threw an error or
                  *      resolved with a rejection.
                  *
-                 * For beforeResponse and response the interceptors are called with the $http response object,
+                 * The beforeResponse and response interceptors are called with the $http response object,
                  * the resource constructor, and if applicable the resource instance.  The afterResponse interceptors
                  * are typically called with the response data instead of the full response object unless the config option
                  * fullResponse has been set to true.  Like the request interceptor callbacks the response callbacks can
@@ -326,8 +326,7 @@
                     fn = RailsResourceInjector.getDependency(fn);
 
                     interceptor[phase] = function (value, resourceConstructor, context) {
-                        fn(value, resourceConstructor, context);
-                        return value;
+                        return fn(value, resourceConstructor, context) || value;
                     };
 
                     this.addInterceptor(interceptor);
@@ -694,6 +693,21 @@
                 RailsResource.prototype.$url = function (path) {
                     return appendPath(this.constructor.resourceUrl(this), path);
                 };
+
+                /**
+                 * Executes $http with the resource instance as the context.
+                 *
+                 * @param httpConfig The config to pass to $http, see $http docs for details
+                 * @param context An optional reference to the resource instance that is the context for the operation.
+                 *      If specified, the result data will be copied into the context during the response handling.
+                 * @param resourceConfigOverrides An optional set of RailsResource configuration options overrides.
+                 *      These overrides allow users to build custom operations more easily with different resource settings.
+                 * @returns {Promise} The promise that will eventually be resolved after all request / response handling
+                 *      has completed.
+                 */
+                RailsResource.prototype.$http = function (httpConfig, resourceConfigOverrides) {
+                    return this.constructor.$http(httpConfig, this, resourceConfigOvverides);
+                }
 
                 angular.forEach(['post', 'put', 'patch'], function (method) {
                     RailsResource['$' + method] = function (url, data) {

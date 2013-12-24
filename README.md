@@ -484,7 +484,7 @@ The beforeResponse and response interceptors are called with the $http response 
 angular.module('rails').factory('saveIndicatorInterceptor', function () {
     return {
         'beforeRequest': function (httpConfig, resourceConstructor, context) {
-            if (context && (httpConfig.method === 'UPDATE' || httpConfig.method === 'CREATE')) {
+            if (context && (httpConfig.method === 'post' || httpConfig.method === 'put')) {
                 context.savePending = true;
             }
             return httpConfig;
