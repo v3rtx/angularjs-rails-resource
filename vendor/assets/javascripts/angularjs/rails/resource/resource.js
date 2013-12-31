@@ -515,12 +515,8 @@
                         var thenFn = chain.shift();
                         var rejectFn = chain.shift();
 
-                        promise = promise.then(function (data) {
-                            return (thenFn || angular.identity)(data, config.resourceConstructor, context);
-                        }, function (rejection) {
-                            // can't use identity because we need to return a rejected promise to keep the error chain going
-                            return rejectFn ? rejectFn(rejection, config.resourceConstructor, context) : $q.reject(rejection);
-                        });
+                        promise = promise.then(createInterceptorSuccessCallback(thenFn, config.resourceConstructor, context),
+                            createInterceptorRejectionCallback(rejectFn, config.resourceConstructor, context));
                     }
 
                     return promise;
@@ -568,7 +564,7 @@
                     }
 
                     promise = this.runInterceptorPhase('request', context, promise).then(function (httpConfig) {
-                        return $http(httpConfig)
+                        return $http(httpConfig);
                     });
 
                     promise = this.runInterceptorPhase('beforeResponse', context, promise);
@@ -707,7 +703,7 @@
                  */
                 RailsResource.prototype.$http = function (httpConfig, resourceConfigOverrides) {
                     return this.constructor.$http(httpConfig, this, resourceConfigOvverides);
-                }
+                };
 
                 angular.forEach(['post', 'put', 'patch'], function (method) {
                     RailsResource['$' + method] = function (url, data) {
@@ -826,6 +822,19 @@
 
                 function booleanParam(value, defaultValue) {
                     return angular.isUndefined(value) ? defaultValue : value;
+                }
+
+                function createInterceptorSuccessCallback(thenFn, resourceConstructor, context) {
+                    return function (data) {
+                        return (thenFn || angular.identity)(data, resourceConstructor, context);
+                    };
+                }
+
+                function createInterceptorRejectionCallback(rejectFn, resourceConstructor, context) {
+                    return function (rejection) {
+                        // can't use identity because we need to return a rejected promise to keep the error chain going
+                        return rejectFn ? rejectFn(rejection, resourceConstructor, context) : $q.reject(rejection);
+                    };
                 }
             }];
     });
