@@ -205,7 +205,12 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **underscoreParams** *(optional)* - Controls whether or not query parameters are converted from camel case to underscore.
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
- * **requestTransformers** *(optional) - See [Transformers / Interceptors](#transformers--interceptors)
+ * **fullResponse** *(optional)* - When set to true promises will return full $http responses instead of just the response data.
+ * **interceptors** *(optional)* - See [Interceptors](#interceptors)
+ * **extensions** *(optional)* - See [Extensions](#extensions)
+
+**Deprecated:**
+ * **requestTransformers** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **responseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
  * **afterResponseInterceptors** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
 
@@ -222,6 +227,8 @@ Each configuration option listed is exposed as a method on the provider that tak
 * defaultParams - {function(object):RailsResourceProvider}
 * underscoreParams - {function(boolean):RailsResourceProvider}
 * updateMethod - {function(boolean):RailsResourceProvider}
+* fullResponse - {function(boolean):RailsResourceProvider}
+* extensions - {function(...string):RailsResourceProvider}
 
 For example, to turn off the root wrapping application-wide and set the update method to PATCH:
 
@@ -299,14 +306,34 @@ RailsResources have the following class methods available.
     * **customUrl** {string} - The url to DELETE to
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
 
-* beforeRequest(fn(data, resource)) - See [Transformers](#transformers) for more information.  The function is called prior to the serialization process so the data
+* $http(httpConfig, context, resourceConfigOverrides) - Executes an HTTP operation specified by the config.  The request data is serialized and root wrapped (if configured).  The response data is unwrapped (if configured) and deserialized and copied to the context object if specified.
+  * **httpConfig** {object} - Standard $http config object.
+  * **context** {object} - The instance that the operation is being run against.
+  * **resourceConfigOverrides** {object} - An optional set of RailsResource configuration option overrides to use for this request.
+
+* addInterceptor(interceptor) - Adds an interceptor to the resource class.
+  * **interceptor** {object | string} - See [Interceptors](#interceptors) for details of object format.
+
+* intercept(phase, callback) - Creates an interceptor for the specified phase and adds it to the resource's interceptor list.  The callback function will be executed when the interceptor phase is run.  If the callback function returns a value that will take the place of the value going forward in the promise chain.
+  * **phase** {string} - The interceptor phase, see [Interceptors](#interceptors) for a list of phases.
+  * **callback** {function(value, resourceConstructor, context)} - The callback function to execute.  The value parameter varies based on the phase.  See [Interceptors](#interceptors) for details.  The resourceConstructor is the resource's constructor function.  The context is the resource instance that operation is running against which may be undefined.
+* interceptBeforeRequest(callback) - Shortcut for intercept('beforeRequest', callback)
+* interceptBeforeRequestWrapping(callback) - Shortcut for intercept('beforeRequestWrapping', callback)
+* interceptRequest(callback) - Shortcut for intercept('request', callback)
+* interceptBeforeResponse(callback) - Shortcut for intercept('beforeResponse', callback)
+* interceptBeforeResponseDeserialize(callback) - Shortcut for intercept('beforeResponseDeserialize', callback)
+* interceptResponse - Shortcut for intercept('response', callback)
+* interceptAfterResponse - Shortcut for intercept('afterResponse', callback)
+
+**Deprecated** 
+* beforeRequest(fn(data, resource)) - See [Interceptors](#interceptors) for more information.  The function is called prior to the serialization process so the data
 passed to the function is still a Resource instance as long as another transformation function has not returned a new object to serialize.
     * fn(data, resource) {function} - The function to add as a transformer.
         * **data** {object} - The data being serialized
         * **resource** {Resource class} - The Resource class that is calling the function
         * **returns** {object | undefined} - If the function returns a new object that object will instead be used for serialization.
 
-* beforeResponse(fn(data, resource, context)) - See [Interceptors](#interceptors) for more information.  The function is called after the response data has been deserialized.
+* beforeResponse(fn(data, resource, context)) - See [Interceptors](#interceptors) for more information.  The function is called after the response data has been unwrapped and deserialized.
     * fn(data, resource, context) {function} - The function to add as an interceptor
         * **data** {object} - The data received from the server
         * **resource** {Resource function} - The Resource constructor that is calling the function
@@ -334,6 +361,8 @@ All of the instance methods will update the instance in-place on response and wi
 
 * remove(), delete() - Executes an HTTP DELETE against the resource's URL (e.g. /books/1234)
     * **returns** {promise} - A promise that will be resolved with the instance itself
+
+* $http(httpConfig, resourceConfigOverrides) - Executes class method $http with the resource instance as the operation context.
 
 * $post(customUrl), $put(customUrl), $patch(customUrl) - Serializes and submits the instance using an HTTP POST/PUT/PATCH to the given URL.
     * **customUrl** {string} - The url to POST / PUT / PATCH to
@@ -417,8 +446,68 @@ The customizer function passed to the railsSerializer has available to it the fo
 The serializers are defined using mostly instance prototype methods.  For information on those methods please see the inline documentation.  There are however a couple of class methods that
 are also defined to expose underscore, camelize, and pluralize.  Those functions are set to the value specified by the configuration options sent to the serializer.
 
+## Interceptors
+The entire request / response processing is configured as a [$q promise chain](http://docs.angularjs.org/api/ng.$q).  Interceptors allow inserting additional synchronous or asynchronous processing at various phases in the request / response cycle.  The flexibility of the synchronous or asynchronous promise resolution allows any number of customizations to be built.  For instance, on response you could load additional data before returning that the current response is complete.  Or, you could listen to multiple phases and set a flag that a save operation is in progress in <code>beforeRequest</code> and then in <code>afterResponse</code> and <code>afterResponseError</code> you could clear the flag.
 
-## Transformers / Interceptors
+Interceptors are similar in design to the $http interceptors.  You can add interceptors via the <code>RailsResource.addInterceptors</code> method or by explicitly adding them to the <code>interceptors</code> array on the on the resource <code>config</code> object.  When you add the interceptor, you can add it using either the interceptor service factory name or the object reference.  An interceptor should contain a set of keys representing one of the valid phases and the callback function for the phase.
+
+There are several phases for both request and response to give users and mixins more flexibility for exactly where they want to insert a customization.  Each phase also has a corresponding error phase which is the phase name appended with Error (e.g. beforeResponse and beforeResponseError).  The error phases receive the current rejection value which in most cases would be the error returned from $http.  Since these are $q promises, your interceptor can decide whether or not to propagate the error or recover from it.  If you want to propagate the error, you must return a <code>$q.reject(reason)</code> result.  Otherwise any value you return will be treated as a successful value to use for the rest of the chain.  For instance, in the <code>beforeResponseError</code> phase you could attempt to recover by using an alternate URL for the request data and return the new promise as the result.
+
+Each request phase interceptor is called with the $http config object, the resource constructor, and if applicable the resource instance.  The interceptor is free to modify the config or create a new one.  The interceptor function must return a valid $http config or a promise that will eventually resolve to a config object.  
+
+The valid request phases are:
+
+ * beforeRequest: Interceptors are called prior to any data serialization or root wrapping.
+ * beforeRequestError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+ * beforeRequestWrapping: Interceptors are called after data serialization but before root wrapping.
+ * beforeRequestWrappingError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+ * request:  Interceptors are called after any data serialization and root wrapping have been performed.
+ * requestError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+
+The beforeResponse and response interceptors are called with the $http response object, the resource constructor, and if applicable the resource instance.  The afterResponse interceptors are typically called with the response data instead of the full response object unless the config option fullResponse has been set to true.  Like the request interceptor callbacks the response callbacks can manipulate the data or return new data.  The interceptor function must return
+
+ The valid response phases are:
+
+ * beforeResponse: Interceptors are called prior to any data processing.
+ * beforeResponseError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+ * beforeResponseDeserialize: Interceptors are called after root unwrapping but prior to data deserializing.
+ * beforeResponseDeserializeError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+ * response:  Interceptors are called after the data has been deserialized and root unwrapped but prior to the data being copied to the resource instance if applicable.
+ * responseError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+ * afterResponse:  Interceptors are called at the very end of the response chain after all processing
+      has been completed.  The value of the first parameter is one of the following:
+       - resource instance: When fullResponse is false and the operation was called on a resource instance.
+       - response data: When fullResponse is false and the operation was called on the resource class.
+       - $http response: When fullResponse is true
+ * afterResponseError: Interceptors get called when a previous interceptor threw an error or resolved with a rejection.
+
+### Example Interceptor
+```javascript
+angular.module('rails').factory('saveIndicatorInterceptor', function () {
+    return {
+        'beforeRequest': function (httpConfig, resourceConstructor, context) {
+            if (context && (httpConfig.method === 'post' || httpConfig.method === 'put')) {
+                context.savePending = true;
+            }
+            return httpConfig;
+        },
+        'afterResponse': function (result, resourceConstructor, context) {
+            if (context) {
+                context.savePending = false;
+            }
+            return result;                    
+        },
+        'afterResponseError': function (rejection, resourceConstructor, context) {
+            if (context) {
+                context.savePending = false;
+            }
+            return $q.reject(rejection);
+        }
+    };
+});
+```
+  
+## Transformers / Interceptors (**DEPRECATED**)
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
 that can be resolved using Angular's DI.  The transformers / interceptors concept was prior to the [serializers](#serializers) but
 we kept the API available because there may be use cases that can be accomplished with these but not the serializers.

@@ -8,9 +8,9 @@
         };
 
         RailsResourceSnapshotsMixin.extended = function (Resource) {
-            Resource.afterResponse(function (result) {
-                if (result.hasOwnProperty('$snapshots') && angular.isArray(result.$snapshots)) {
-                    result.$snapshots.length = 0;
+            Resource.intercept('afterResponse', function (result, resource, context) {
+                if (context && context.hasOwnProperty('$snapshots') && angular.isArray(context.$snapshots)) {
+                    context.$snapshots.length = 0;
                 }
             });
 
@@ -109,7 +109,10 @@
                 numVersions = snapshotsLength;
             }
 
-            this.rollbackTo(this.$snapshots.length - numVersions);
+            if (snapshotsLength) {
+                this.rollbackTo(this.$snapshots.length - numVersions);
+            }
+
             return true;
         }
 

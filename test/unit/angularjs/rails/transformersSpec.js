@@ -1,4 +1,4 @@
-describe('transformers', function () {
+describe('deprecated request transformers', function () {
     'use strict';
     var $httpBackend, $rootScope, factory, Test, testTransformer,
         config = {
@@ -29,7 +29,6 @@ describe('transformers', function () {
         $httpBackend.verifyNoOutstandingExpectation();
         $httpBackend.verifyNoOutstandingRequest();
     });
-
 
     it('should be able to add transformer using name', function() {
         var Resource, testConfig = {};

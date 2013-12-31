@@ -3,33 +3,13 @@ describe('root wrapping', function () {
 
     beforeEach(module('rails'));
 
-    var q, rootScope,
-        transformer, interceptor,
-        config = {config: {name: 'test', pluralName: 'tests'}};
+    var q, rootScope, railsRootWrapper, Resource;
 
-
-    function testTransform(wrappedData, unwrappedData) {
-        var result, resultPromise,
-            deferred = q.defer();
-
-        expect(transformer(unwrappedData, config)).toEqualData(wrappedData);
-        deferred.promise.resource = config;
-        expect(resultPromise = interceptor(deferred.promise)).toBeDefined();
-
-        resultPromise.then(function (response) {
-            result = response;
-        });
-
-        deferred.resolve({data: wrappedData});
-        rootScope.$digest(); // needed for $q to actually run callbacks
-        expect(result).toEqualData({data: unwrappedData});
-    }
-
-    beforeEach(inject(function ($rootScope, $q, railsRootWrappingTransformer, railsRootWrappingInterceptor) {
+    beforeEach(inject(function ($rootScope, $q, railsResourceFactory, _railsRootWrapper_) {
         q = $q;
         rootScope = $rootScope;
-        transformer = railsRootWrappingTransformer;
-        interceptor = railsRootWrappingInterceptor;
+        Resource = railsResourceFactory({name: 'test', pluralName: 'tests'});
+        railsRootWrapper = _railsRootWrapper_;
     }));
 
     it('should handle null root', function() {
@@ -43,4 +23,9 @@ describe('root wrapping', function () {
     it('should transform object', function() {
         testTransform({test: {abc: 'xyz', def: 'abc'}}, {abc: 'xyz', def: 'abc'});
     });
+
+    function testTransform(wrappedData, unwrappedData) {
+        expect(railsRootWrapper.wrap(unwrappedData, Resource)).toEqualData(wrappedData);
+        expect(railsRootWrapper.unwrap({data: wrappedData}, Resource)).toEqualData({data: unwrappedData});
+    }
 });
