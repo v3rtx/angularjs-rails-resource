@@ -4,7 +4,7 @@
 A resource factory inspired by $resource from AngularJS and [Misko's recommendation](http://stackoverflow.com/questions/11850025/recommended-way-of-getting-data-from-the-server).
 
 ## Differences from $resource
-This library is not a drop in replacement for $resource.  There are significant differences that you should be aware of and
+This library is not a drop in replacement for $resource.  There are significant differences that you should be aware of:
 
 1.  <code>get</code> and <code>query</code> return [$q promises](http://docs.angularjs.org/api/ng.$q), not an instance or array that will be populated.  To gain access to the results you
 should use the promise <code>then</code> function.
@@ -302,8 +302,9 @@ RailsResources have the following class methods available.
     * **data** {object} - The data to serialize and POST / PUT / PATCH
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
-* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+* $delete(customUrl, queryParams) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
     * **customUrl** {string} - The url to DELETE to
+    * **queryParams** {object} (optional) - The set of query parameters to include in the DELETE request
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
 
 * $http(httpConfig, context, resourceConfigOverrides) - Executes an HTTP operation specified by the config.  The request data is serialized and root wrapped (if configured).  The response data is unwrapped (if configured) and deserialized and copied to the context object if specified.
@@ -368,8 +369,9 @@ All of the instance methods will update the instance in-place on response and wi
     * **customUrl** {string} - The url to POST / PUT / PATCH to
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
-* $delete(customUrl) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
+* $delete(customUrl, queryParams) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
     * **customUrl** {string} - The url to DELETE to
+    * **queryParams** {object} (optional) - The set of query parameters to include in the DELETE request
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
 
