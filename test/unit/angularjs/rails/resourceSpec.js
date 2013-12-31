@@ -478,6 +478,25 @@ describe('railsResourceFactory', function () {
             $httpBackend.flush();
         });
 
+        it('should not require query params on $delete', function () {
+            $httpBackend.expectDELETE('/test').respond(200);
+            Test.$delete('/test');
+            $httpBackend.flush();
+        });
+
+        it('should add query params passed to class $delete', function () {
+            $httpBackend.expectDELETE('/test?a=1').respond(200);
+            Test.$delete('/test', {a: 1});
+            $httpBackend.flush();
+        });
+
+        it('should add query params passed to instance $delete', function () {
+            var data = new Test({abcDef: 'xyz'});
+
+            $httpBackend.expectDELETE('/test?a=1').respond(200);
+            data.$delete('/test', {a: 1});
+            $httpBackend.flush();
+        });
     });
 
     describe('plural', function() {

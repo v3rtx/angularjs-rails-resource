@@ -745,12 +745,12 @@
                     }
                 };
 
-                RailsResource.$delete = function (url) {
-                    return this.$http(angular.extend({method: 'delete', url: url}, this.getHttpConfig()));
+                RailsResource.$delete = function (url, queryParams) {
+                    return this.$http(angular.extend({method: 'delete', url: url}, this.getHttpConfig(queryParams)));
                 };
 
-                RailsResource.prototype.$delete = function (url) {
-                    return this.constructor.$http(angular.extend({method: 'delete', url: url}, this.constructor.getHttpConfig()), this);
+                RailsResource.prototype.$delete = function (url, queryParams) {
+                    return this.constructor.$http(angular.extend({method: 'delete', url: url}, this.constructor.getHttpConfig(queryParams)), this);
                 };
 
                 //using ['delete'] instead of .delete for IE7/8 compatibility
