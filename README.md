@@ -207,6 +207,7 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
  * **fullResponse** *(optional)* - When set to true promises will return full $http responses instead of just the response data.
  * **interceptors** *(optional)* - See [Interceptors](#interceptors)
+ * **extensions** *(optional)* - See [Extensions](#extensions)
 
 **Deprecated:**
  * **requestTransformers** *(optional)* - See [Transformers / Interceptors](#transformers--interceptors)
@@ -227,6 +228,7 @@ Each configuration option listed is exposed as a method on the provider that tak
 * underscoreParams - {function(boolean):RailsResourceProvider}
 * updateMethod - {function(boolean):RailsResourceProvider}
 * fullResponse - {function(boolean):RailsResourceProvider}
+* extensions - {function(...string):RailsResourceProvider}
 
 For example, to turn off the root wrapping application-wide and set the update method to PATCH:
 
