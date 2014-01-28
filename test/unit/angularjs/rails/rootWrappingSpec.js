@@ -26,6 +26,6 @@ describe('root wrapping', function () {
 
     function testTransform(wrappedData, unwrappedData) {
         expect(railsRootWrapper.wrap(unwrappedData, Resource)).toEqualData(wrappedData);
-        expect(railsRootWrapper.unwrap({data: wrappedData}, Resource)).toEqualData({data: unwrappedData});
+        expect(railsRootWrapper.unwrap({data: wrappedData}, Resource)).toEqualData({data: unwrappedData, originalData: wrappedData});
     }
 });

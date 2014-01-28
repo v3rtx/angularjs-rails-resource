@@ -7,6 +7,9 @@
                 return result;
             },
             unwrap: function (response, resource) {
+                // store off the data so we don't lose access to it after deserializing and unwrapping
+                response.originalData = response.data;
+
                 if (response.data && response.data.hasOwnProperty(resource.config.name)) {
                     response.data = response.data[resource.config.name];
                 } else if (response.data && response.data.hasOwnProperty(resource.config.pluralName)) {
@@ -461,8 +464,6 @@
                  * @returns {*} The $http response
                  */
                 RailsResource.deserialize = function (response) {
-                    // store off the data so we don't lose access to it after deserializing and unwrapping
-                    response.originalData = response.data;
                     response.data = this.config.serializer.deserialize(response.data, this.config.resourceConstructor);
                     return response;
                 };
