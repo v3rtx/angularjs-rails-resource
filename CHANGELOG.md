@@ -1,3 +1,9 @@
+<a name="1.0.1"></a>
+# 1.0.1
+## Bug Fixes
+- <code>response.originalData</code> was not being saved off before the root unwrapping so it didn't match the original response data as intended. @Ditchou
+ 
+
 <a name="1.0.0"></a>
 # 1.0.0
 ## Deprecations
