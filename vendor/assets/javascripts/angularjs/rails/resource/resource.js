@@ -7,9 +7,6 @@
                 return result;
             },
             unwrap: function (response, resource) {
-                // store off the data so we don't lose access to it after deserializing and unwrapping
-                response.originalData = response.data;
-
                 if (response.data && response.data.hasOwnProperty(resource.config.name)) {
                     response.data = response.data[resource.config.name];
                 } else if (response.data && response.data.hasOwnProperty(resource.config.pluralName)) {
@@ -569,6 +566,12 @@
                     });
 
                     promise = this.runInterceptorPhase('beforeResponse', context, promise);
+
+                    promise = this.runInterceptorPhase('beforeResponse', context, promise).then(function (response) {
+                      // store off the data so we don't lose access to it after deserializing and unwrapping
+                      response.originalData = response.data;
+                      return response;
+                    });
 
                     if (config.rootWrapping) {
                         promise = promise.then(function (response) {
