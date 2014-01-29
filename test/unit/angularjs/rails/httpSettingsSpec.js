@@ -79,6 +79,26 @@ describe('http setting', function () {
         $httpBackend.flush();
     }));
 
+
+    it('query should keep originalData in response if we setted the resource option : fullResponse', inject(function($httpBackend) {
+        var promise, result, Test;
+
+        var originalResponse = {tests: [{id: 1, name:"test_1"}, {id:2, name: "test_2"}], page: 1}
+
+        $httpBackend.expectGET('/test', headerComparison({'Accept': 'application/json'})).respond(200, originalResponse);
+
+        Test = factory(angular.extend(angular.copy(config), { fullResponse: true}));
+        expect(promise = Test.query()).toBeDefined();
+
+        promise.then(function (response) {
+            result = response;
+            expect(response.originalData).toEqual(originalResponse);
+        });
+
+        $httpBackend.flush();
+    }));
+
+
     it('get should pass default $http options', inject(function($httpBackend) {
         var promise, result, Test;
 

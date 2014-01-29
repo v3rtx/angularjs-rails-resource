@@ -461,8 +461,6 @@
                  * @returns {*} The $http response
                  */
                 RailsResource.deserialize = function (response) {
-                    // store off the data so we don't lose access to it after deserializing and unwrapping
-                    response.originalData = response.data;
                     response.data = this.config.serializer.deserialize(response.data, this.config.resourceConstructor);
                     return response;
                 };
@@ -568,6 +566,12 @@
                     });
 
                     promise = this.runInterceptorPhase('beforeResponse', context, promise);
+
+                    promise = this.runInterceptorPhase('beforeResponse', context, promise).then(function (response) {
+                      // store off the data so we don't lose access to it after deserializing and unwrapping
+                      response.originalData = response.data;
+                      return response;
+                    });
 
                     if (config.rootWrapping) {
                         promise = promise.then(function (response) {
