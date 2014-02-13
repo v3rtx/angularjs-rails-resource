@@ -706,7 +706,7 @@
                  *      has completed.
                  */
                 RailsResource.prototype.$http = function (httpConfig, resourceConfigOverrides) {
-                    return this.constructor.$http(httpConfig, this, resourceConfigOvverides);
+                    return this.constructor.$http(httpConfig, this, resourceConfigOverrides);
                 };
 
                 angular.forEach(['post', 'put', 'patch'], function (method) {
