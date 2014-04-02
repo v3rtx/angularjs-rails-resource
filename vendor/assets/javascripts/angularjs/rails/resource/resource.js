@@ -209,6 +209,7 @@
                     }
 
                     this.config = {};
+                    this.config.idAttribute = cfg.idAttribute || 'id';
                     this.config.url = cfg.url;
                     this.config.rootWrapping = booleanParam(cfg.rootWrapping, defaultOptions.rootWrapping); // using undefined check because config.rootWrapping || true would be true when config.rootWrapping === false
                     this.config.httpConfig = cfg.httpConfig || defaultOptions.httpConfig;
@@ -733,8 +734,9 @@
                 };
 
                 RailsResource.prototype.isNew = function () {
-                    return angular.isUndefined(this.id) ||
-                        this.id === null;
+                    var idAttribute = this.constructor.config.idAttribute;
+                    return angular.isUndefined(this[idAttribute]) ||
+                        this[idAttribute] === null;
                 };
 
                 RailsResource.prototype.save = function () {
