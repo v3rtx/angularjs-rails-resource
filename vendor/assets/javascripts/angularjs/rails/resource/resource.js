@@ -233,7 +233,7 @@
                         this.config.pluralName = this.config.serializer.underscore(cfg.pluralName || this.config.serializer.pluralize(this.config.name));
                     }
 
-                    this.config.urlBuilder = railsUrlBuilder(this.config.url);
+                    this.config.urlBuilder = railsUrlBuilder(this.config);
                     this.config.resourceConstructor = this;
 
                     this.extend.apply(this, loadExtensions((cfg.extensions || []).concat(defaultOptions.extensions)));
