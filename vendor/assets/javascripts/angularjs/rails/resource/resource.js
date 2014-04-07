@@ -733,9 +733,7 @@
                 };
 
                 RailsResource.prototype.get = function () {
-                    var self = this;
-                    this.constructor.$http(angular.extend({method: 'GET', url: this.$url()}, this.constructor.getHttpConfig()), this);
-                    return self;
+                    return this.constructor.$http(angular.extend({method: 'GET', url: this.$url()}, this.constructor.getHttpConfig()), this);
                 };
 
                 RailsResource.prototype.isNew = function () {
