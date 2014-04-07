@@ -197,6 +197,7 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **name** - This is the name used for root wrapping when dealing with singular instances.
  * **pluralName** *(optional)* - If specified this name will be used for unwrapping array results.  If not specified then the serializer's [pluralize](#serializers) method is used to calculate
         the plural name from the singular name.
+ * **idAttribute** *(optional)* - (Default: 'id') Configures what field on the record represents the unique identifier.
  * **httpConfig** *(optional)* - By default we will add the following headers to ensure that the request is processed as JSON by Rails. You can specify additional http config options or override any of the defaults by setting this property.  See the [AngularJS $http API](http://docs.angularjs.org/api/ng.$http) for more information.
      * **headers**
          * **Accept** - application/json
@@ -351,6 +352,9 @@ All of the instance methods will update the instance in-place on response and wi
 
 * $url(path) - Returns this Resource instance's URL with the optional path appended if provided.
     * **path** {string} (optional) - A path to append to the resource's URL.
+
+* get() - Refreshes the instance from the server.
+    * **returns** {promise} - A promise that will be resolved with the instance itself
 
 * create() - Submits the resource instance to the resource's base URL (e.g. /books) using a POST
     * **returns** {promise} - A promise that will be resolved with the instance itself
