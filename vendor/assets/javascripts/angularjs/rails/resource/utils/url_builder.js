@@ -30,15 +30,17 @@
  */
 (function (undefined) {
     angular.module('rails').factory('railsUrlBuilder', ['$interpolate', function($interpolate) {
-        return function (url) {
-            var expression;
+        return function (config) {
+            var url = config.url,
+              idAttribute = config.idAttribute,
+              expression;
 
             if (angular.isFunction(url) || angular.isUndefined(url)) {
                 return url;
             }
 
             if (url.indexOf($interpolate.startSymbol()) === -1) {
-                url = url + '/' + $interpolate.startSymbol() + 'id' + $interpolate.endSymbol();
+                url = url + '/' + $interpolate.startSymbol() + idAttribute + $interpolate.endSymbol();
             }
 
             expression = $interpolate(url);
