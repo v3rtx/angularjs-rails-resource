@@ -732,6 +732,15 @@
                     return this['$' + this.constructor.config.updateMethod](this.$url(), this);
                 };
 
+                RailsResource.prototype.get = function () {
+                    var self = this;
+                    this.constructor.$get(this.$url(), this.constructor.config.params)
+                        .then(function (updatedResource) {
+                            angular.extend(self, updatedResource) ;
+                        });
+                    return self;
+                };
+
                 RailsResource.prototype.isNew = function () {
                     return angular.isUndefined(this.id) ||
                         this.id === null;
