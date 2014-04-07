@@ -1,3 +1,11 @@
+<a name="1.1.0"></a>
+# 1.1.0
+## Bug Fixes
+
+## Features
+- Added <code>idAttribute</code> configuration option to allow customizing the unique id field on resources. - #114 (@inlineblock)
+- Added <code>get</code> instance method to refresh resources from the server. - #115 (@wwilkins)
+ 
 <a name="1.0.1"></a>
 # 1.0.1
 ## Bug Fixes
