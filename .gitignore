@@ -19,4 +19,5 @@ test_out
 atlassian-ide-plugin.xml
 node_modules
 build/
+.idea/
 
