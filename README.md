@@ -35,7 +35,7 @@ angular.module('app').config(["railsSerializerProvider", function(railsSerialize
 ### Rails Asset Pipeline
 Add this line to your application's Gemfile to use the latest stable version:
 ```ruby
-gem 'angularjs-rails-resource', '~> 1.0.0'
+gem 'angularjs-rails-resource', '~> 1.1.0'
 ```
 
 Include the javascript somewhere in your asset pipeline:
