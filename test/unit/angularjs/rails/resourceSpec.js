@@ -521,6 +521,36 @@ describe('railsResourceFactory', function () {
             data.$delete('/test', {a: 1});
             $httpBackend.flush();
         });
+
+        it('should return true for isNew when id undefined', function () {
+            expect(new Test().isNew()).toBeTruthy();
+        });
+
+        it('should return true for isNew when id is null', function () {
+            expect(new Test({id: null}).isNew()).toBeTruthy();
+        });
+
+        it('should return false for isNew when id is set', function () {
+            expect(new Test({id: 1}).isNew()).toBeFalsy();
+        });
+
+        describe('overridden idAttribute', function () {
+            beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory) {
+                Test = railsResourceFactory({url: '/test', name: 'test', idAttribute: 'xyz'});
+            }));
+
+            it('should return true for isNew when xyz undefined', function () {
+                expect(new Test().isNew()).toBeTruthy();
+            });
+
+            it('should return true for isNew when xyz is null', function () {
+                expect(new Test({xyz: null}).isNew()).toBeTruthy();
+            });
+
+            it('should return false for isNew when xyz is set', function () {
+                expect(new Test({xyz: 1}).isNew()).toBeFalsy();
+            });
+        });
     });
 
     describe('plural', function() {
