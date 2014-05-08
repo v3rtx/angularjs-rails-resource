@@ -133,7 +133,7 @@ passes the resulting promise to the processResponse method which will perform th
 		var resource = railsResourceFactory({url: '/books', name: 'book'});
 		resource.prototype.getReferences = function () {
 			var self = this;
-			return resource.$get(self.$url('references'))).then(function (references) {
+			return resource.$get(self.$url('references')).then(function (references) {
 				self.references = references;
 				return self.references;
 			});
@@ -142,7 +142,7 @@ passes the resulting promise to the processResponse method which will perform th
 
 # Specifying Transformer
 Transformers can be specified by an array of transformers in the configuration options passed to railsResourceFactory.
-However, a cleaner eway to write it is to use the <code>beforeRequest</code> which can take a new anonymous function or
+However, a cleaner way to write it is to use the <code>beforeRequest</code> which can take a new anonymous function or
 a function returned by a factory if you want to share a transformer across multiple resources.
 
 Both of these examples can be accomplished using the serializers now.
