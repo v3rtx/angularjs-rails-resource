@@ -308,7 +308,7 @@ RailsResources have the following class methods available.
     * **queryParams** {object} (optional) - The set of query parameters to include in the DELETE request
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response) if the server includes a response body.
 
-* $http(httpConfig, context, resourceConfigOverrides) - Executes an HTTP operation specified by the config.  The request data is serialized and root wrapped (if configured).  The response data is unwrapped (if configured) and deserialized and copied to the context object if specified.
+* $http(httpConfig, context, resourceConfigOverrides) - Executes an HTTP operation specified by the config.  The request data is serialized and root wrapped (if configured).  The response data is unwrapped (if configured) and deserialized and copied to the context object if specified. Wrapping and serialization for the request data can be bypassed using the `skipRequestProcessing` flag on the config overrides object. This will also bypass the entire pre-request [interceptor](#interceptors) chain.
   * **httpConfig** {object} - Standard $http config object.
   * **context** {object} - The instance that the operation is being run against.
   * **resourceConfigOverrides** {object} - An optional set of RailsResource configuration option overrides to use for this request.

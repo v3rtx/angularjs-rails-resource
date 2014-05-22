@@ -34,6 +34,76 @@ describe('http setting', function () {
         };
     }
 
+    describe('$http', function() {
+
+        describe('when config includes skipRequestProcessing', function() {
+
+            it('skips all "before" interceptors', function() {
+                var phases = ['beforeRequest', 'beforeRequestWrapping', 'request'],
+                    interceptors = {},
+                    Resource = factory(config),
+                    data = {foo: 'bar'},
+                    httpConfig = {method: 'POST', url: config.url, data: data};
+
+                angular.forEach(phases, function(phase) {
+                    interceptors[phase] = jasmine.createSpy(phase);
+                    Resource.intercept(phase, interceptors[phase]);
+                });
+
+                $httpBackend.expectPOST(config.url, data).respond(200);
+                Resource.$http(httpConfig, null, {skipRequestProcessing: true});
+                $httpBackend.flush();
+
+                angular.forEach(phases, function(phase) {
+                    expect(interceptors[phase]).not.toHaveBeenCalled();
+                });
+            });
+
+            it('does not skip "after" interceptors', function() {
+                var phases = ['beforeResponse', 'beforeResponseDeserialize', 'response', 'afterResponse'],
+                    interceptors = {},
+                    Resource = factory(config),
+                    data = {foo: 'bar'},
+                    httpConfig = {method: 'POST', url: config.url, data: data};
+
+                angular.forEach(phases, function(phase) {
+                    interceptors[phase] = jasmine.createSpy(phase);
+                    Resource.intercept(phase, interceptors[phase]);
+                });
+
+                $httpBackend.expectPOST(config.url, data).respond(200);
+                Resource.$http(httpConfig, null, {skipRequestProcessing: true});
+                $httpBackend.flush();
+
+                angular.forEach(phases, function(phase) {
+                    expect(interceptors[phase]).toHaveBeenCalled();
+                });
+            });
+
+            it('deserializes the response into a Resource object', function() {
+
+                var promise,
+                    result,
+                    data = {foo: 'bar'},
+                    httpConfig = {method: 'POST', url: config.url, data: data},
+                    Resource = factory(config);
+
+                $httpBackend.expectPOST(config.url, data).respond(200, data);
+                promise = Resource.$http(httpConfig, null, {skipRequestProcessing: true});
+                promise.then(function(response) {
+                    result = response;
+                });
+                $httpBackend.flush();
+
+                expect(result).toBeInstanceOf(Resource);
+                expect(result).toEqualData(data);
+
+            });
+
+        });
+
+    });
+
     it('query should pass default $http options', inject(function($httpBackend) {
         var promise, result, Test;
 

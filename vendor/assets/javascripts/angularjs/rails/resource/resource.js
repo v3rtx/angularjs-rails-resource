@@ -543,28 +543,36 @@
                         resourceConstructor = config.resourceConstructor,
                         promise = $q.when(httpConfig);
 
-                    promise = this.runInterceptorPhase('beforeRequest', context, promise).then(function (httpConfig) {
-                        httpConfig = resourceConstructor.serialize(httpConfig);
+                    if (!config.skipRequestProcessing) {
 
-                        forEachDependency(config.requestTransformers, function (transformer) {
-                            httpConfig.data = transformer(httpConfig.data, config.resourceConstructor);
-                        });
+                        promise = this.runInterceptorPhase('beforeRequest', context, promise).then(function (httpConfig) {
+                            httpConfig = resourceConstructor.serialize(httpConfig);
 
-                        return httpConfig;
-                    });
+                            forEachDependency(config.requestTransformers, function (transformer) {
+                                httpConfig.data = transformer(httpConfig.data, config.resourceConstructor);
+                            });
 
-                    promise = this.runInterceptorPhase('beforeRequestWrapping', context, promise);
-
-                    if (config.rootWrapping) {
-                        promise = promise.then(function (httpConfig) {
-                            httpConfig.data = railsRootWrapper.wrap(httpConfig.data, config.resourceConstructor);
                             return httpConfig;
                         });
-                    }
 
-                    promise = this.runInterceptorPhase('request', context, promise).then(function (httpConfig) {
-                        return $http(httpConfig);
-                    });
+                        promise = this.runInterceptorPhase('beforeRequestWrapping', context, promise);
+
+                        if (config.rootWrapping) {
+                            promise = promise.then(function (httpConfig) {
+                                httpConfig.data = railsRootWrapper.wrap(httpConfig.data, config.resourceConstructor);
+                                return httpConfig;
+                            });
+                        }
+
+                        promise = this.runInterceptorPhase('request', context, promise).then(function (httpConfig) {
+                            return $http(httpConfig);
+                        });
+
+                    } else {
+
+                        promise = $http(httpConfig);
+
+                    }
 
                     promise = this.runInterceptorPhase('beforeResponse', context, promise);
 
