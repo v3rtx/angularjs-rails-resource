@@ -719,10 +719,10 @@
                 };
 
                 angular.forEach(['post', 'put', 'patch'], function (method) {
-                    RailsResource['$' + method] = function (url, data) {
+                    RailsResource['$' + method] = function (url, data, resourceConfigOverrides) {
                         // clone so we can manipulate w/o modifying the actual instance
                         data = angular.copy(data);
-                        return this.$http(angular.extend({method: method, url: url, data: data}, this.getHttpConfig()));
+                        return this.$http(angular.extend({method: method, url: url, data: data}, this.getHttpConfig()), null, resourceConfigOverrides);
                     };
 
                     RailsResource.prototype['$' + method] = function (url) {

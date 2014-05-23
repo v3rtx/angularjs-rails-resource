@@ -34,6 +34,22 @@ describe('http setting', function () {
         };
     }
 
+    describe('$post/$put/$patch', function() {
+
+        it('passes resourceConfigOverrides to $http', function() {
+            var methods = ['$post', '$put', '$patch'],
+                Resource = factory(config),
+                overrides = {baz: 'qux'};
+            spyOn(Resource, '$http');
+            angular.forEach(methods, function(method) {
+                Resource[method](null, null, overrides);
+                expect(Resource.$http.mostRecentCall.args[2]).toEqual(overrides);
+            });
+            expect(Resource.$http.calls.length).toBe(methods.length);
+        });
+
+    });
+
     describe('$http', function() {
 
         describe('when config includes skipRequestProcessing', function() {
