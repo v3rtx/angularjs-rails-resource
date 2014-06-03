@@ -348,6 +348,25 @@ describe('RailsResource.snapshots', function () {
         expect(secondCallbackCalled).toBe(true);
     });
 
+    it('should detect unsnapped changes', function () {
+        var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
+        book = new Book(data);
+        expect(book.unsnappedChanges()).toBe(true);
+
+        book.snapshot();
+        expect(book.unsnappedChanges()).toBe(false);
+
+        book.name = 'Harry Potter';
+        expect(book.unsnappedChanges()).toBe(true);
+
+        book.snapshot();
+        expect(book.unsnappedChanges()).toBe(false);
+
+        // angular.equals ignores $-prefixed properties
+        book.$key = '1235'
+        expect(book.unsnappedChanges()).toBe(false);
+    });
+
     describe('serializer', function () {
         beforeEach(function () {
             Book.configure({
