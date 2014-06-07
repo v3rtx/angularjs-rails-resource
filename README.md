@@ -328,7 +328,7 @@ RailsResources have the following class methods available.
 * interceptResponse - Shortcut for intercept('response', callback)
 * interceptAfterResponse - Shortcut for intercept('afterResponse', callback)
 
-**Deprecated** 
+**Deprecated**
 * beforeRequest(fn(data, resource)) - See [Interceptors](#interceptors) for more information.  The function is called prior to the serialization process so the data
 passed to the function is still a Resource instance as long as another transformation function has not returned a new object to serialize.
     * fn(data, resource) {function} - The function to add as a transformer.
@@ -460,7 +460,7 @@ Interceptors are similar in design to the $http interceptors.  You can add inter
 
 There are several phases for both request and response to give users and mixins more flexibility for exactly where they want to insert a customization.  Each phase also has a corresponding error phase which is the phase name appended with Error (e.g. beforeResponse and beforeResponseError).  The error phases receive the current rejection value which in most cases would be the error returned from $http.  Since these are $q promises, your interceptor can decide whether or not to propagate the error or recover from it.  If you want to propagate the error, you must return a <code>$q.reject(reason)</code> result.  Otherwise any value you return will be treated as a successful value to use for the rest of the chain.  For instance, in the <code>beforeResponseError</code> phase you could attempt to recover by using an alternate URL for the request data and return the new promise as the result.
 
-Each request phase interceptor is called with the $http config object, the resource constructor, and if applicable the resource instance.  The interceptor is free to modify the config or create a new one.  The interceptor function must return a valid $http config or a promise that will eventually resolve to a config object.  
+Each request phase interceptor is called with the $http config object, the resource constructor, and if applicable the resource instance.  The interceptor is free to modify the config or create a new one.  The interceptor function must return a valid $http config or a promise that will eventually resolve to a config object.
 
 The valid request phases are:
 
@@ -502,7 +502,7 @@ angular.module('rails').factory('saveIndicatorInterceptor', function () {
             if (context) {
                 context.savePending = false;
             }
-            return result;                    
+            return result;
         },
         'afterResponseError': function (rejection, resourceConstructor, context) {
             if (context) {
@@ -513,7 +513,7 @@ angular.module('rails').factory('saveIndicatorInterceptor', function () {
     };
 });
 ```
-  
+
 ## Transformers / Interceptors (**DEPRECATED**)
 The transformers and interceptors can be specified using an array containing transformer/interceptor functions or strings
 that can be resolved using Angular's DI.  The transformers / interceptors concept was prior to the [serializers](#serializers) but
@@ -671,6 +671,14 @@ snapshot version.  <code>numVersions</code> can be used to roll back further tha
 * When <code>snapshotVersion</code> is greater than the number of versions then the last snapshot version will be used.
 * When <code>snapshotVersion</code> is less than 0 then the resource will be rolled back to the first version.
 * Otherwise, the resource will be rolled back to the specific version specified.
+
+##### unsnappedChanges
+`unsnappedChanges()` checks to see if the resource has been changed since its last snapshot
+
+* If there are no snapshots, returns `true`
+* If all properties considered by `angular.equals` match the latest snapshot, returns `false`;
+  otherwise, returns `true`
+* (Note that `angular.equals` [does not consider $-prefixed properties](https://docs.angularjs.org/api/ng/function/angular.equals))
 
 ## Tests
 The tests are written using [Jasmine](http://pivotal.github.com/jasmine/) and are run using [Karma](https://github.com/karma-runner/karma).

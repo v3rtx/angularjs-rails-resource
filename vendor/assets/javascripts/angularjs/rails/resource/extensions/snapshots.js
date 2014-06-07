@@ -17,11 +17,28 @@
             Resource.include({
                 snapshot: snapshot,
                 rollback: rollback,
-                rollbackTo: rollbackTo
+                rollbackTo: rollbackTo,
+                unsnappedChanges: unsnappedChanges,
+                _prepSnapshot: _prepSnapshot
             });
         };
 
         return RailsResourceSnapshotsMixin;
+
+        /**
+         * Prepares a copy of the resource to be stored as a snapshot
+         * @returns {Resource} the copied resource, sans $snapshots
+         */
+        function _prepSnapshot() {
+            var config = this.constructor.config,
+                copy = (config.snapshotSerializer || config.serializer).serialize(this);
+
+            // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
+            // not to mention using more memory for each snapshot.
+            delete copy.$snapshots;
+
+            return copy
+        }
 
         /**
          * Stores a copy of this resource in the $snapshots array to allow undoing changes.
@@ -29,12 +46,8 @@
          * @returns {Number} The version of the snapshot created (0-based index)
          */
         function snapshot(rollbackCallback) {
-            var config = this.constructor.config,
-                copy = (config.snapshotSerializer || config.serializer).serialize(this);
+            var copy = this._prepSnapshot();
 
-            // we don't want to store our snapshots in the snapshots because that would make the rollback kind of funny
-            // not to mention using more memory for each snapshot.
-            delete copy.$snapshots;
             copy.$rollbackCallback = rollbackCallback;
 
             if (!this.$snapshots) {
@@ -114,6 +127,21 @@
             }
 
             return true;
+        }
+
+        /**
+         * Checks if resource is changed from the most recent snapshot.
+         * @returns {Boolean} true if the latest snapshot differs from resource as-is
+         */
+        function unsnappedChanges() {
+            if (!this.$snapshots) {
+                return true
+            }
+
+            var copy = this._prepSnapshot(),
+                latestSnap = this.$snapshots[this.$snapshots.length - 1]
+
+            return !angular.equals(copy, latestSnap)
         }
 
     }]);
