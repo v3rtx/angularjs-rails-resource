@@ -1,3 +1,11 @@
+<a name="1.2.0"></a>
+# 1.2.0
+## Bug Fixes
+
+## Features
+- Added <code>unsnappedChanges()</code> function to snapshots mixin to check whether or not there have been any changes since the last snapshot was taken. - #125 (@StevenClontz)
+- Added <code>skipRequestProcessing</code> override configuration option to $http, $post, $put, $patch to bypass request processing (root wrapping, serialization) and request interceptor chains - #123 (@mayhewluke) 
+
 <a name="1.1.0"></a>
 # 1.1.0
 ## Bug Fixes
