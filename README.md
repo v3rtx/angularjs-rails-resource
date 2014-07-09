@@ -246,10 +246,10 @@ The URL can be specified as one of three ways:
 
  2. basic string - A string without any expression variables will be treated as a base URL and assumed that instance requests should append id to the end.
 
- 3. AngularJS expression - An expression url is evaluated at run time based on the given context for non-instance methods or the instance itself. For example, given the url expression: /stores/{{storeId}}/items/{{id}}
+ 3. AngularJS expression - An expression url is evaluated at run time based on the given context for non-instance methods or the instance itself. For example, given the url expression: `/stores/{{storeId}}/items/{{id}}`
 
 ```javascript
-Item.query({category: 'Software'}, {storeId: 123}) // would generate a GET to /stores/1234/items?category=Software
+Item.query({category: 'Software'}, {storeId: 123}) // would generate a GET to /stores/123/items?category=Software
 Item.get({storeId: 123, id: 1}) // would generate a GET to /stores/123/items/1
 
 new Item({store: 123}).create() // would generate a POST to /stores/123/items
