@@ -125,13 +125,14 @@ Resource.configure(config);
 ```javascript
 angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
     $scope.searching = true;
+    $scope.books = [];
+    
     // Find all books matching the title
-    $scope.books = Book.query({
-        title: title
-    });
-    $scope.books.then(function (results) {
+    Book.query({ title: title }).then(function (results) {
+        $scope.books = results;
         $scope.searching = false;
     }, function (error) {
+        // do something about the error
         $scope.searching = false;
     });
 
