@@ -117,6 +117,7 @@ The following example exposes a <code>getAuthor</code> instance method that woul
 		resource.prototype.getAuthor = function () {
 			return Author.get(this.authorId);
 		};
+		return resource;
 	}]);
 	angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
 		$scope.getAuthorDetails = function (book) {
