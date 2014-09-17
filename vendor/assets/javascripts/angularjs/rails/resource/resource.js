@@ -574,8 +574,6 @@
 
                     }
 
-                    promise = this.runInterceptorPhase('beforeResponse', context, promise);
-
                     promise = this.runInterceptorPhase('beforeResponse', context, promise).then(function (response) {
                       // store off the data so we don't lose access to it after deserializing and unwrapping
                       response.originalData = response.data;

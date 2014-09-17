@@ -212,6 +212,27 @@ describe('interceptors', function () {
         });
     });
 
+    describe('beforeResponse', function() {
+        it('should run interceptor only once', function() {
+            var Resource, interceptorCalledCount = 0;
+
+            $httpBackend.expectGET('/test/123').respond(200, {id: 123, abc_def: 'xyz'});
+
+            Resource = factory(config);
+            Resource.addInterceptor({
+                'beforeResponse': function (response, constructor, context) {
+                    interceptorCalledCount++;
+                    return response;
+                }
+            });
+
+            Resource.get(123)
+            $httpBackend.flush();
+
+            expect(interceptorCalledCount).toEqual(1);
+        });
+    });
+
     describe('response', function () {
         it('should be able to reference interceptor using name', function () {
             var promise, result, Resource, testConfig = {};
