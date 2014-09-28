@@ -1,3 +1,8 @@
+<a name="1.2.1"></a>
+# 1.2.1
+## Bug Fixes
+- Call beforeResponse interceptor only once - #139 (@shuhei) 
+
 <a name="1.2.0"></a>
 # 1.2.0
 ## Bug Fixes
