@@ -343,6 +343,52 @@ describe('railsSerializer', function () {
                 expect(result['num_books']).toBe(2);
             });
 
+            it('should add custom attribute to collection from function', function() {
+                var result, authorWithPublisher, serializedBooks,
+                    serializer = createSerializer(function () {
+                        this.serializeWith('books', factory(function() {
+                            this.add('publisherId', function(book) {
+                                return book.publisher.id;
+                            });
+                        }));
+                    });
+                authorWithPublisher = {
+                    books: [
+                        {id: 1, publisher: {id: 3}},
+                        {id: 2, publisher: {id: 4}}
+                    ]
+                };
+                serializedBooks = [
+                    {id: 1, publisher_id: 3, publisher: {id:3}},
+                    {id: 2, publisher_id: 4, publisher: {id:4}}
+                ];
+
+                result = serializer.serialize(authorWithPublisher);
+                expect(result['books']).toEqual(serializedBooks);
+            });
+
+            it('should add custom attribute to collection from constant value', function() {
+                var result, authorWithPublisher, serializedBooks,
+                    serializer = createSerializer(function () {
+                        this.serializeWith('books', factory(function() {
+                            this.add('publisherId', 3);
+                        }));
+                    });
+                authorWithPublisher = {
+                    books: [
+                        {id: 1, publisher: {id: 3}},
+                        {id: 2, publisher: {id: 4}}
+                    ]
+                };
+                serializedBooks = [
+                    {id: 1, publisher_id: 3, publisher: {id:3}},
+                    {id: 2, publisher_id: 3, publisher: {id:4}}
+                ];
+
+                result = serializer.serialize(authorWithPublisher);
+                expect(result['books']).toEqual(serializedBooks);
+            });
+
             it('should use custom serializer for books', function () {
                 var result, serializedBooks, underscored,
                     serializer = createSerializer(function () {
