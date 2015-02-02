@@ -5,7 +5,7 @@
   "description": "A resource factory inspired by $resource from AngularJS",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FineLinePrototyping/dist-angularjs-rails-resource.git"
+    "url": "https://github.com/Rademade/dist-angularjs-rails-resource.git"
   },
   "dependencies": {
     "angular": "*"
