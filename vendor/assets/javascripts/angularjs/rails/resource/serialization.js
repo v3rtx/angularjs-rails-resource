@@ -353,7 +353,7 @@
                  * @param data The data to prepare
                  * @returns {*} A new object or array that is ready for JSON serialization
                  */
-                Serializer.prototype.serializeValue = function (data) {
+                Serializer.prototype.deserializeData = function (data, Resource) {
                     var result = data,
                         self = this;
 
@@ -361,7 +361,7 @@
                         result = [];
 
                         angular.forEach(data, function (value) {
-                            result.push(self.serializeValue(value));
+                            result.push(self.deserializeData(value, Resource));
                         });
                     } else if (angular.isObject(data)) {
                         if (angular.isDate(data)) {
@@ -369,15 +369,26 @@
                         }
                         result = {};
 
-                        angular.forEach(data, function (value, key) {
-                            // if the value is a function then it can't be serialized to JSON so we'll just skip it
-                            if (!angular.isFunction(value)) {
-                                self.serializeAttribute(result, key, value);
-                            }
-                        });
+                        if (Resource) {
+                            result = new Resource.config.resourceConstructor();
+                        }
+
+                        this.deserializeObject(result, data);
+
                     }
 
                     return result;
+                };
+
+                Serializer.prototype.deserializeObject = function (result, data) {
+                    //console.log(data);
+                    //console.log(Resource);
+
+                    var $this = this;
+                    angular.forEach(data, function (value, key) {
+                        $this.deserializeAttribute(result, key, value);
+                    });
+                    return data
                 };
 
                 /**
@@ -434,7 +445,7 @@
                  * @param Resource (optional) The resource type to deserialize the result into
                  * @returns {*} A new object or an instance of Resource populated with deserialized data.
                  */
-                Serializer.prototype.deserializeValue = function (data, Resource) {
+                Serializer.prototype.deserializeData = function (data, Resource) {
                     var result = data,
                         self = this;
 
@@ -442,7 +453,7 @@
                         result = [];
 
                         angular.forEach(data, function (value) {
-                            result.push(self.deserializeValue(value, Resource));
+                            result.push(self.deserializeData(value, Resource));
                         });
                     } else if (angular.isObject(data)) {
                         if (angular.isDate(data)) {
@@ -488,7 +499,7 @@
                     if (this.preservedAttributes[attributeName]) {
                         data[attributeName] = value;
                     } else {
-                        data[attributeName] = serializer ? serializer.deserialize(value, NestedResource) : this.deserializeValue(value, NestedResource);
+                        data[attributeName] = serializer ? serializer.deserialize(value, NestedResource) : this.deserializeData(value, NestedResource);
                     }
                 };
 
@@ -505,7 +516,7 @@
                  */
                 Serializer.prototype.deserialize = function (data, Resource) {
                     // just calls deserializeValue for now so we can more easily add on custom attribute logic for deserialize too
-                    return this.deserializeValue(data, Resource);
+                    return this.deserializeData(data, Resource);
                 };
 
                 Serializer.prototype.pluralize = function (value) {
