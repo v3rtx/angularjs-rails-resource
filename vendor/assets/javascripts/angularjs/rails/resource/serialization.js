@@ -416,11 +416,22 @@
 
                     if (angular.isObject(result)) {
                         angular.forEach(this.customSerializedAttributes, function (value, key) {
-                            if (angular.isFunction(value)) {
-                                value = value.call(data, data);
-                            }
+                            if (angular.isArray(result)) {
+                                angular.forEach(result, function (item, index) {
+                                    var itemValue = value;
+                                    if (angular.isFunction(value)) {
+                                        itemValue = itemValue.call(item, item);
+                                    }
 
-                            self.serializeAttribute(result, key, value);
+                                    self.serializeAttribute(item, key, itemValue);
+                                });
+                            } else {
+                                if (angular.isFunction(value)) {
+                                    value = value.call(data, data);
+                                }
+
+                                self.serializeAttribute(result, key, value);
+                            }
                         });
                     }
 
