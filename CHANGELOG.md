@@ -1,4 +1,9 @@
-<a name="1.2.1"></a>
+<a name="1.2.3"></a>
+# 1.2.3
+## Bug Fixes
+- Apply custom serialization attributes before doing full serialization - #148 (@envek)
+
+<a name="1.2.2"></a>
 # 1.2.2
 ## Bug Fixes
 - Add support for adding custom attributes when serializing arrays - #143 (@shuhei)
