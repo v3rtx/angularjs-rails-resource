@@ -453,5 +453,67 @@ describe('railsSerializer', function () {
                 expect(result).toEqual({ id: 1, books: [book]});
             });
         });
+
+        describe('nested resource collection serialization', function () {
+            module('rails');
+
+            angular.module('rails').factory('Team', function (railsResourceFactory, railsSerializer) {
+                return railsResourceFactory({
+                    name: 'team',
+                    serializer: railsSerializer(function() {
+                        this.nestedAttribute('members');
+                        this.resource('members', 'Member');
+                        this.add('vehicle_id', function(team) {
+                            return team.vehicle.id;
+                        });
+                        this.exclude('vehicle');
+                    })
+                });
+            });
+            angular.module('rails').factory('Member', function (railsResourceFactory, railsSerializer) {
+                return railsResourceFactory({
+                    name: 'member',
+                    serializer: railsSerializer(function() {
+                        this.resource('user', 'User');
+                        this.resource('slot', 'Slot');
+                        this.add('user_id', function(member) {
+                            return member.user.id;
+                        });
+                        this.add('slot_id', function(member) {
+                            return member.slot.id;
+                        });
+                        this.exclude('user', 'slot');
+                    })
+                });
+            });
+            angular.module('rails').factory('Slot', function (railsResourceFactory) {
+                return railsResourceFactory({name: 'slot'});
+            });
+            angular.module('rails').factory('User', function (railsResourceFactory) {
+                return railsResourceFactory({name: 'user'});
+            });
+            angular.module('rails').factory('Vehicle', function (railsResourceFactory) {
+                return railsResourceFactory({name: 'vehicle'});
+            });
+
+
+            it('should add custom attribute in nested resource', inject(function(Team) {
+                var team1 = new Team({
+                    id: 1,
+                    name: 'Team 1',
+                    vehicle: { id: 123, name: 'Subaru Impreza' },
+                    members: [
+                        { id: 352435, user: { id: 100500, name: 'Andrey' }, slot: { id: 200425, rank_id: 1 } },
+                        { id: 235433, user: { id: 100501, name: 'Anton'  }, slot: { id: 200426, rank_id: 2 } },
+                    ],
+                });
+                var serializedTeam1 = {
+                    id: 1, name: 'Team 1', vehicle_id: 123,
+                    members_attributes: [{id: 352435, user_id: 100500, slot_id: 200425}, {id: 235433, user_id: 100501, slot_id: 200426}],
+                };
+
+                expect(Team.config.serializer.serialize(team1)).toEqual(serializedTeam1);
+            }));
+        });
     });
 });

@@ -411,7 +411,7 @@
                  * @returns {*} A new object or array that is ready for JSON serialization
                  */
                 Serializer.prototype.serialize = function (data) {
-                    var result = this.serializeValue(data),
+                    var result = angular.copy(data),
                         self = this;
 
                     if (angular.isObject(result)) {
@@ -434,6 +434,8 @@
                             }
                         });
                     }
+
+                    result = this.serializeValue(result);
 
                     return result;
                 };
