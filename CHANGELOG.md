@@ -1,3 +1,8 @@
+<a name="2.0.0"></a>
+# 2.0.0
+## Breaking Changes
+- Renamed <code>Serializer.serializeValue</code> to <code>Serializer.serializeData</code> and added new <code>Serializer.serializeObject</code> method. - #149 (@andrey-abramow)
+
 <a name="1.2.3"></a>
 # 1.2.3
 ## Bug Fixes
