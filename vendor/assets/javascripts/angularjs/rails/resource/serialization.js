@@ -353,7 +353,7 @@
                  * @param data The data to prepare
                  * @returns {*} A new object or array that is ready for JSON serialization
                  */
-                Serializer.prototype.serializeValue = function (data) {
+                Serializer.prototype.serializeData = function (data) {
                     var result = data,
                         self = this;
 
@@ -361,7 +361,7 @@
                         result = [];
 
                         angular.forEach(data, function (value) {
-                            result.push(self.serializeValue(value));
+                            result.push(self.serializeData(value));
                         });
                     } else if (angular.isObject(data)) {
                         if (angular.isDate(data)) {
@@ -369,15 +369,24 @@
                         }
                         result = {};
 
-                        angular.forEach(data, function (value, key) {
-                            // if the value is a function then it can't be serialized to JSON so we'll just skip it
-                            if (!angular.isFunction(value)) {
-                                self.serializeAttribute(result, key, value);
-                            }
-                        });
+                        this.serializeObject(result, data);
+
                     }
 
                     return result;
+                };
+
+                Serializer.prototype.serializeObject = function(result, data){
+
+
+                    var tthis = this;
+                    angular.forEach(data, function (value, key) {
+                        // if the value is a function then it can't be serialized to JSON so we'll just skip it
+                        if (!angular.isFunction(value)) {
+                            tthis.serializeAttribute(result, key, value);
+                        }
+                    });
+                    return data;
                 };
 
                 /**
@@ -397,7 +406,7 @@
                         return;
                     }
 
-                    data[serializedAttributeName] = serializer ? serializer.serialize(value) : this.serializeValue(value);
+                    data[serializedAttributeName] = serializer ? serializer.serialize(value) : this.serializeData(value);
                 };
 
                 /**
@@ -411,7 +420,7 @@
                  * @returns {*} A new object or array that is ready for JSON serialization
                  */
                 Serializer.prototype.serialize = function (data) {
-                    var result = this.serializeValue(data),
+                    var result = this.serializeData(data),
                         self = this;
 
                     if (angular.isObject(result)) {
@@ -462,8 +471,6 @@
                 };
 
                 Serializer.prototype.deserializeObject = function (result, data) {
-                    //console.log(data);
-                    //console.log(Resource);
 
                     var tthis = this;
                     angular.forEach(data, function (value, key) {
