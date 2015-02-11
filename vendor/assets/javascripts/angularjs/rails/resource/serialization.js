@@ -304,8 +304,8 @@
                     var camelizedName = this.camelize(attributeName);
 
                     camelizedName = this.deserializeMappings[attributeName] ||
-                    this.deserializeMappings[camelizedName] ||
-                    camelizedName;
+                        this.deserializeMappings[camelizedName] ||
+                        camelizedName;
 
                     if (this.isExcludedFromDeserialization(attributeName) || this.isExcludedFromDeserialization(camelizedName)) {
                         return undefined;
@@ -420,18 +420,31 @@
                  * @returns {*} A new object or array that is ready for JSON serialization
                  */
                 Serializer.prototype.serialize = function (data) {
-                    var result = this.serializeData(data),
+                    var result = angular.copy(data),
                         self = this;
 
                     if (angular.isObject(result)) {
                         angular.forEach(this.customSerializedAttributes, function (value, key) {
-                            if (angular.isFunction(value)) {
-                                value = value.call(data, data);
-                            }
+                            if (angular.isArray(result)) {
+                                angular.forEach(result, function (item, index) {
+                                    var itemValue = value;
+                                    if (angular.isFunction(value)) {
+                                        itemValue = itemValue.call(item, item);
+                                    }
 
-                            self.serializeAttribute(result, key, value);
+                                    self.serializeAttribute(item, key, itemValue);
+                                });
+                            } else {
+                                if (angular.isFunction(value)) {
+                                    value = value.call(data, data);
+                                }
+
+                                self.serializeAttribute(result, key, value);
+                            }
                         });
                     }
+
+                    result = this.serializeData(result);
 
                     return result;
                 };

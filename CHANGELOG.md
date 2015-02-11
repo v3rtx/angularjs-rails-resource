@@ -1,7 +1,18 @@
+<a name="1.2.3"></a>
+# 1.2.3
+## Bug Fixes
+- Apply custom serialization attributes before doing full serialization - #148 (@envek)
+
+<a name="1.2.2"></a>
+# 1.2.2
+## Bug Fixes
+- Add support for adding custom attributes when serializing arrays - #143 (@shuhei)
+- Force constructor to unwrap as an object - #134 (@tuvistavie)
+
 <a name="1.2.1"></a>
 # 1.2.1
 ## Bug Fixes
-- Call beforeResponse interceptor only once - #139 (@shuhei) 
+- Call beforeResponse interceptor only once - #139 (@shuhei)
 
 <a name="1.2.0"></a>
 # 1.2.0
@@ -9,7 +20,7 @@
 
 ## Features
 - Added <code>unsnappedChanges()</code> function to snapshots mixin to check whether or not there have been any changes since the last snapshot was taken. - #125 (@StevenClontz)
-- Added <code>skipRequestProcessing</code> override configuration option to $http, $post, $put, $patch to bypass request processing (root wrapping, serialization) and request interceptor chains - #123 (@mayhewluke) 
+- Added <code>skipRequestProcessing</code> override configuration option to $http, $post, $put, $patch to bypass request processing (root wrapping, serialization) and request interceptor chains - #123 (@mayhewluke)
 
 <a name="1.1.0"></a>
 # 1.1.0
@@ -18,12 +29,12 @@
 ## Features
 - Added <code>idAttribute</code> configuration option to allow customizing the unique id field on resources. - #114 (@inlineblock)
 - Added <code>get</code> instance method to refresh resources from the server. - #115 (@wwilkins)
- 
+
 <a name="1.0.1"></a>
 # 1.0.1
 ## Bug Fixes
 - <code>response.originalData</code> was not being saved off before the root unwrapping so it didn't match the original response data as intended. @Ditchou
- 
+
 
 <a name="1.0.0"></a>
 # 1.0.0

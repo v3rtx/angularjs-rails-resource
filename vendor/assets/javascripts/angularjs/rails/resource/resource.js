@@ -6,10 +6,10 @@
                 result[angular.isArray(data) ? resource.config.pluralName : resource.config.name] = data;
                 return result;
             },
-            unwrap: function (response, resource) {
+            unwrap: function (response, resource, isObject) {
                 if (response.data && response.data.hasOwnProperty(resource.config.name)) {
                     response.data = response.data[resource.config.name];
-                } else if (response.data && response.data.hasOwnProperty(resource.config.pluralName)) {
+                } else if (response.data && response.data.hasOwnProperty(resource.config.pluralName) && !isObject) {
                     response.data = response.data[resource.config.pluralName];
                 }
 
@@ -114,7 +114,7 @@
                     if (value) {
                         var response = this.constructor.deserialize({data: value});
                         if (this.constructor.config.rootWrapping) {
-                            response = railsRootWrapper.unwrap(response, this.constructor);
+                            response = railsRootWrapper.unwrap(response, this.constructor, true);
                         }
                         angular.extend(this, response.data);
                     }
@@ -582,7 +582,7 @@
 
                     if (config.rootWrapping) {
                         promise = promise.then(function (response) {
-                            return railsRootWrapper.unwrap(response, config.resourceConstructor);
+                            return railsRootWrapper.unwrap(response, config.resourceConstructor, false);
                         });
                     }
 
