@@ -107,6 +107,9 @@ class Encyclopedia extends Book
   @configure url: '/encyclopedias', name: 'encyclopedia'
 ````
 
+**NOTE:** Always call <code>@configure()</code> in subclasses, even when no configuration is required.
+This is important to prevent overriding the parent's configuration with interceptors, etc (especially when using a module mixin pattern).
+
 ##### JavaScript
 Since the purpose of exposing the RailsResource was to allow for CoffeeScript users to create classes from it the JavaScript way
 is basically just the same as the generated CoffeeScript code.  The <code>RailsResource.extendTo</code> function is a modification
@@ -126,7 +129,7 @@ Resource.configure(config);
 angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book', function ($scope, Book) {
     $scope.searching = true;
     $scope.books = [];
-    
+
     // Find all books matching the title
     Book.query({ title: title }).then(function (results) {
         $scope.books = results;
