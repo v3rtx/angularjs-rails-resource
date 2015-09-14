@@ -534,6 +534,11 @@ describe('railsResourceFactory', function () {
             expect(new Test({id: 1}).isNew()).toBeFalsy();
         });
 
+        it('configure should return config object', function() {
+          var Resource = factory();
+          expect(Resource.configure(config)).toBeInstanceOf(Object);
+        });
+
         describe('overridden idAttribute', function () {
             beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory) {
                 Test = railsResourceFactory({url: '/test', name: 'test', idAttribute: 'xyz'});
