@@ -243,6 +243,8 @@
                             mixin.configure(this.config, cfg);
                         }
                     }, this);
+
+                    return this.config;
                 };
 
                 /**
