@@ -39,7 +39,7 @@
                 return url;
             }
 
-            if (url.indexOf($interpolate.startSymbol()) === -1) {
+            if (!config.singular && url.indexOf($interpolate.startSymbol()) === -1) {
                 url = url + '/' + $interpolate.startSymbol() + idAttribute + $interpolate.endSymbol();
             }
 
