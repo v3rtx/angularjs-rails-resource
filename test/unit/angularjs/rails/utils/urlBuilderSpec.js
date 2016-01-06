@@ -22,6 +22,13 @@ describe("railsUrlBuilder", function () {
         })({id: 1})).toEqualData('/books/1');
     }));
 
+    it('should not append id when singular', inject(function (railsUrlBuilder) {
+        expect(railsUrlBuilder({
+          url: '/book',
+          singular: true
+        })()).toEqualData('/book');
+    }));
+
     it('should use author id for book list', inject(function (railsUrlBuilder) {
         expect(railsUrlBuilder({
           url: '/authors/{{authorId}}/books/{{id}}',
