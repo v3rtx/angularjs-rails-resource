@@ -211,6 +211,7 @@ defined on the resource can be called multiple times to adjust properties as nee
  * **updateMethod** *(optional)* - Allows overriding the default HTTP method (PUT) used for update.  Valid values are "post", "put", or "patch".
  * **serializer** *(optional)* - Allows specifying a custom [serializer](#serializers) to configure custom serialization options.
  * **fullResponse** *(optional)* - When set to true promises will return full $http responses instead of just the response data.
+ * **singular** - (Default: false) Treat this as a [singular resource](http://guides.rubyonrails.org/routing.html#singular-resources).
  * **interceptors** *(optional)* - See [Interceptors](#interceptors)
  * **extensions** *(optional)* - See [Extensions](#extensions)
 

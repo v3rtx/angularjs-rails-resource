@@ -26,6 +26,7 @@
             defaultParams: undefined,
             underscoreParams: true,
             fullResponse: false,
+            singular: false,
             extensions: []
         };
 
