@@ -1,3 +1,9 @@
+<a name="2.1.0"></a>
+# 2.1.0
+## Features
+- Added option for singular resources - #187 (@jnfeinstein)
+- <code>configure</code> now returns the config object. - #176 (@poporul)
+
 <a name="2.0.0"></a>
 # 2.0.0
 ## Breaking Changes
