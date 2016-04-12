@@ -720,17 +720,16 @@
                 };
 
                 angular.forEach(['post', 'put', 'patch'], function (method) {
-                    RailsResource['$' + method] = function (url, data, resourceConfigOverrides) {
+                    RailsResource['$' + method] = function (url, data, resourceConfigOverrides, queryParams) {
                         // clone so we can manipulate w/o modifying the actual instance
                         data = angular.copy(data);
-                        return this.$http(angular.extend({method: method, url: url, data: data}, this.getHttpConfig()), null, resourceConfigOverrides);
+                        return this.$http(angular.extend({method: method, url: url, data: data}, this.getHttpConfig(queryParams)), null, resourceConfigOverrides);
                     };
 
-                    RailsResource.prototype['$' + method] = function (url) {
+                    RailsResource.prototype['$' + method] = function (url, context, queryParams) {
                         // clone so we can manipulate w/o modifying the actual instance
                         var data = angular.copy(this, {});
-                        return this.constructor.$http(angular.extend({method: method, url: url, data: data}, this.constructor.getHttpConfig()), this);
-
+                        return this.constructor.$http(angular.extend({method: method, url: url, data: data}, this.constructor.getHttpConfig(queryParams)), this);
                     };
                 });
 
