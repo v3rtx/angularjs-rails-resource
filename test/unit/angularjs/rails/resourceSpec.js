@@ -484,6 +484,19 @@ describe('railsResourceFactory', function () {
                 expect(result).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
             });
 
+            it('should be able to ' + method + ' to arbitrary url with query params', function () {
+                var promise, result = {};
+
+                promise = Test['$' + method]('/xyz', {abc: 'xyz', xyz: 'abc'}, {}, {def: 'ghi'});
+                $httpBackend['expect' + angular.uppercase(method)]('/xyz?def=ghi', {test: {abc: 'xyz', xyz: 'abc'}}).respond(200, {test: {abc: 'xyz', xyz: 'abc', extra: 'test'}});
+
+                promise.then(function (response) {
+                    result = response;
+                });
+
+                $httpBackend.flush();
+            });
+
             it('should be able to ' + method + ' instance to arbitrary url', function () {
                 var test = new Test({id: 123, abc: 'xyz', xyz: 'abc'});
                 $httpBackend['expect' + angular.uppercase(method)]('/xyz', {test: {id: 123, abc: 'xyz', xyz: 'abc'}}).respond(200, {test: {id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'}});
@@ -492,6 +505,13 @@ describe('railsResourceFactory', function () {
 
                 // abc was originally set on the object so it should still be there after the update
                 expect(test).toEqualData({id: 123, abc: 'xyz', xyz: 'abc', extra: 'test'});
+            });
+
+            it('should be able to ' + method + ' instance to arbitrary url with query params', function () {
+                var test = new Test({abc: 'xyz', xyz: 'abc'});
+                $httpBackend['expect' + angular.uppercase(method)]('/xyz?def=ghi', {test: {abc: 'xyz', xyz: 'abc'}}).respond(200, {test: {abc: 'xyz', xyz: 'abc', extra: 'test'}});
+                test['$' + method]('/xyz', {}, {def: 'ghi'});
+                $httpBackend.flush();
             });
         });
 
