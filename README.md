@@ -303,10 +303,11 @@ RailsResources have the following class methods available.
     * **queryParams** {object} (optional) - The set of query parameters to include in the GET request
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
-* $post/$put/$patch(customUrl, data, resourceConfigOverrides) - Serializes the data parameter using the Resource's normal serialization process and submits the result as a POST / PUT / PATCH to the given URL.
+* $post/$put/$patch(customUrl, data, resourceConfigOverrides, queryParams) - Serializes the data parameter using the Resource's normal serialization process and submits the result as a POST / PUT / PATCH to the given URL.
     * **customUrl** {string} - The url to POST / PUT / PATCH to
     * **data** {object} - The data to serialize and POST / PUT / PATCH
     * **resourceConfigOverrides** {object} (optional) - An optional set of RailsResource configuration option overrides to use for this request. Root wrapping and serialization for the request data can be bypassed using the `skipRequestProcessing` flag. This also bypasses the entire pre-request [interceptor](#interceptors) chain.
+    * **queryParams** {object} (optional) - The set of query parameters to include in the request
     * **returns** {promise} A promise that will be resolved with a new Resource instance (or instances in the case of an array response).
 
 * $delete(customUrl, queryParams) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
@@ -375,8 +376,10 @@ All of the instance methods will update the instance in-place on response and wi
 
 * $http(httpConfig, resourceConfigOverrides) - Executes class method $http with the resource instance as the operation context.
 
-* $post(customUrl), $put(customUrl), $patch(customUrl) - Serializes and submits the instance using an HTTP POST/PUT/PATCH to the given URL.
+* $post(customUrl, context, queryParams), $put(customUrl, context, queryParams), $patch(customUrl, context, queryParams) - Serializes and submits the instance using an HTTP POST/PUT/PATCH to the given URL.
     * **customUrl** {string} - The url to POST / PUT / PATCH to
+    * **context** {object} - The instance that the operation is being run against.
+    * **queryParams** {object} (optional) - The set of query parameters to include in the POST / PUT / PATCH request
     * **returns** {promise} - A promise that will be resolved with the instance itself
 
 * $delete(customUrl, queryParams) - Executes a DELETE to a custom URL.  The main difference between this and $http.delete is that a server response that contains a body will be deserialized using the normal Resource deserialization process.
