@@ -1,3 +1,8 @@
+<a name="2.2.0"></a>
+# 2.2.0
+## Features
+- Allow queryParams for $post, $put and $patch - #197 (@herumtreiber )
+
 <a name="2.1.0"></a>
 # 2.1.0
 ## Features

@@ -454,6 +454,48 @@ describe('railsSerializer', function () {
             });
         });
 
+        describe('multiple levels of nested attributes', function () {
+            module('rails');
+
+            angular.module('rails').factory('Campaign', function (railsResourceFactory, railsSerializer) {
+                return railsResourceFactory({
+                    name: 'campaign',
+                    serializer: railsSerializer(function() {
+                        this.resource('emails', 'Email');
+                        this.nestedAttribute('emails');
+                    })
+                });
+            });
+            angular.module('rails').factory('Email', function (railsResourceFactory, railsSerializer) {
+                return railsResourceFactory({
+                    name: 'email',
+                    serializer: railsSerializer(function() {
+                        this.resource('emailTemplate', 'EmailTemplate');
+                        this.nestedAttribute('emailTemplate');
+                    })
+                });
+            });
+            angular.module('rails').factory('EmailTemplate', function (railsResourceFactory) {
+                return railsResourceFactory({name: 'emailTemplate'});
+            });
+
+            it('should add email template as nested attribute', inject(function(Campaign, Email, EmailTemplate) {
+                var campaign = new Campaign({
+                    id: 1,
+                    name: 'Test',
+                    emails: [
+                        new Email({id: 1, name: '50% off', emailTemplate: new EmailTemplate({id: 1, name: 'Discount'})})
+                    ]
+                });
+                var serializedCampaign = {
+                    id: 1, name: 'Test',
+                    emails_attributes: [
+                      {id: 1, name: '50% off', email_template_attributes: { id: 1, name: 'Discount' }}],
+                };
+
+                expect(Campaign.config.serializer.serialize(campaign)).toEqual(serializedCampaign);
+            }));
+        });
         describe('nested resource collection serialization', function () {
             module('rails');
 
@@ -476,13 +518,11 @@ describe('railsSerializer', function () {
                     serializer: railsSerializer(function() {
                         this.resource('user', 'User');
                         this.resource('slot', 'Slot');
+                        this.nestedAttribute('slot');
                         this.add('user_id', function(member) {
                             return member.user.id;
                         });
-                        this.add('slot_id', function(member) {
-                            return member.slot.id;
-                        });
-                        this.exclude('user', 'slot');
+                        this.exclude('user');
                     })
                 });
             });
@@ -509,7 +549,7 @@ describe('railsSerializer', function () {
                 });
                 var serializedTeam1 = {
                     id: 1, name: 'Team 1', vehicle_id: 123,
-                    members_attributes: [{id: 352435, user_id: 100500, slot_id: 200425}, {id: 235433, user_id: 100501, slot_id: 200426}],
+                    members_attributes: [{id: 352435, user_id: 100500, slot_attributes: { id: 200425, rank_id: 1 }}, {id: 235433, user_id: 100501, slot_attributes: { id: 200426, rank_id: 2 }}],
                 };
 
                 expect(Team.config.serializer.serialize(team1)).toEqual(serializedTeam1);
