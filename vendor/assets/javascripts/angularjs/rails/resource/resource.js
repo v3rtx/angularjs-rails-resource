@@ -675,6 +675,7 @@
                  * @return {string}
                  */
                  RailsResource.$url = RailsResource.resourceUrl = function (ctxt, path) {
+                     var context = ctxt;
                      if (!angular.isObject(ctxt)) {
                          context = {};
                          context[this.config.idAttribute] = ctxt;
