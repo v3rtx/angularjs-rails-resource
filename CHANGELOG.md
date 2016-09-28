@@ -1,5 +1,5 @@
-<a name="2.2.1"></a>
-# 2.2.1
+<a name="2.2.2"></a>
+# 2.2.2
 ## Bug Fixes
 - Fixed AngularJS dependency from 1.0.x to 1.x.x - #200 (@shuhei)
 - Fixed URL string interpolation to use <code>idAttribute</code> config setting - #202 (@gannimet)
