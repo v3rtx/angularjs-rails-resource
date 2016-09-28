@@ -674,13 +674,14 @@
                  * @param path {string} (optional) An additional path to append to the URL
                  * @return {string}
                  */
-                RailsResource.$url = RailsResource.resourceUrl = function (context, path) {
-                    if (!angular.isObject(context)) {
-                        context = {id: context};
-                    }
+                 RailsResource.$url = RailsResource.resourceUrl = function (ctxt, path) {
+                     if (!angular.isObject(ctxt)) {
+                         context = {};
+                         context[this.config.idAttribute] = ctxt;
+                     }
 
-                    return appendPath(this.buildUrl(context || {}), path);
-                };
+                     return appendPath(this.buildUrl(context || {}), path);
+                 };
 
                 RailsResource.$get = function (url, queryParams) {
                     return this.$http(angular.extend({method: 'get', url: url}, this.getHttpConfig(queryParams)));
