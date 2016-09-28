@@ -8,7 +8,7 @@
     "url": "https://github.com/FineLinePrototyping/dist-angularjs-rails-resource.git"
   },
   "dependencies": {
-    "angular": "~1.0"
+    "angular": "^1.0"
   },
   "ignore": [
     "node_modules",
