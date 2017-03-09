@@ -27,12 +27,12 @@ describe('RailsResource.snapshots', function () {
         book = new Book(data);
         expect(book.snapshot()).toBe(0);
 
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(1);
-        expect(book.$snapshots[0].$snapshots).toBeUndefined();
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(1);
+        expect(book.$$snapshots[0].$$snapshots).toBeUndefined();
         expect(book).toEqualData(data);
-        expect(book.$snapshots[0].$key).toBe('1234');
-        expect(book.$snapshots[0]).toEqualData(data);
+        expect(book.$$snapshots[0].$key).toBe('1234');
+        expect(book.$$snapshots[0]).toEqualData(data);
     });
 
     it('should store deep copy', function () {
@@ -49,9 +49,9 @@ describe('RailsResource.snapshots', function () {
         book = new Book(data);
         book.snapshot();
 
-        expect(book.$snapshots[0].author).toBeDefined();
-        expect(book.$snapshots[0].author.id).toBe(1);
-        expect(book.$snapshots[0]).toEqualData(data);
+        expect(book.$$snapshots[0].author).toBeDefined();
+        expect(book.$$snapshots[0].author.id).toBe(1);
+        expect(book.$$snapshots[0]).toEqualData(data);
     });
 
     it('should store multiple snapshots', function () {
@@ -63,11 +63,11 @@ describe('RailsResource.snapshots', function () {
         book.$key = '1236';
         expect(book.snapshot()).toBe(2);
 
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(3);
-        expect(book.$snapshots[0].$key).toBe('1234');
-        expect(book.$snapshots[1].$key).toBe('1235');
-        expect(book.$snapshots[2].$key).toBe('1236');
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(3);
+        expect(book.$$snapshots[0].$key).toBe('1234');
+        expect(book.$$snapshots[1].$key).toBe('1235');
+        expect(book.$$snapshots[2].$key).toBe('1236');
     });
 
     it('should rollback single version', function () {
@@ -80,8 +80,8 @@ describe('RailsResource.snapshots', function () {
         book.rollback();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(1);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(1);
     });
 
     it('should rollback deep copy', function () {
@@ -142,13 +142,13 @@ describe('RailsResource.snapshots', function () {
         book.rollback();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(1);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(1);
         book.rollback();
 
         expect(book.$key).toBe('1234');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
 
@@ -164,8 +164,8 @@ describe('RailsResource.snapshots', function () {
         book.rollback(2);
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(1);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(1);
     });
 
     it('should not change resource on rollback if no snapshots saved', function () {
@@ -188,8 +188,8 @@ describe('RailsResource.snapshots', function () {
         book.rollback(-1);
 
         expect(book.$key).toBe('1234');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should roll back to the first snapshot when versions exceeds available snapshots', function () {
@@ -203,8 +203,8 @@ describe('RailsResource.snapshots', function () {
         book.rollback(1000);
 
         expect(book.$key).toBe('1234');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should roll back to version in middle', function () {
@@ -218,8 +218,8 @@ describe('RailsResource.snapshots', function () {
         book.rollbackTo(1);
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(1);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(1);
     });
 
     it('should roll back to first version', function () {
@@ -233,8 +233,8 @@ describe('RailsResource.snapshots', function () {
         book.rollbackTo(0);
 
         expect(book.$key).toBe('1234');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should roll back to last version when version exceeds available versions', function () {
@@ -249,8 +249,8 @@ describe('RailsResource.snapshots', function () {
         book.rollbackTo(100);
 
         expect(book.$key).toBe('1236');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(2);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(2);
     });
 
     it('should reset snapshots on create', function () {
@@ -264,8 +264,8 @@ describe('RailsResource.snapshots', function () {
         $httpBackend.flush();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should be able to save after rollback', function () {
@@ -280,11 +280,11 @@ describe('RailsResource.snapshots', function () {
         $httpBackend.flush();
 
         expect(book.$key).toBe('1234');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
-    it('should not submit $snapshots', function () {
+    it('should not submit $$snapshots', function () {
         var book, data = {id: 1, $key: '1234', name: 'The Winds of Winter'};
         book = new Book(data);
         book.snapshot();
@@ -292,7 +292,7 @@ describe('RailsResource.snapshots', function () {
 
         $httpBackend.whenPUT('/books/1', function(putData) {
             var json = JSON.parse(putData);
-            expect(json.book.$snapshots).toBeUndefined();
+            expect(json.book.$$snapshots).toBeUndefined();
             return true;
         }).respond(200, {book: {id: 1}});
 
@@ -300,8 +300,8 @@ describe('RailsResource.snapshots', function () {
         $httpBackend.flush();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should reset snapshots on update', function () {
@@ -315,8 +315,8 @@ describe('RailsResource.snapshots', function () {
         $httpBackend.flush();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should reset snapshots on delete', function () {
@@ -330,8 +330,8 @@ describe('RailsResource.snapshots', function () {
         $httpBackend.flush();
 
         expect(book.$key).toBe('1235');
-        expect(book.$snapshots).toBeDefined();
-        expect(book.$snapshots.length).toBe(0);
+        expect(book.$$snapshots).toBeDefined();
+        expect(book.$$snapshots.length).toBe(0);
     });
 
     it('should call rollback callback on rollback', function () {
@@ -417,7 +417,7 @@ describe('RailsResource.snapshots', function () {
             book.snapshot();
             book.author.name = 'George Orwell';
 
-            expect(book.$snapshots[0].author).not.toBeDefined();
+            expect(book.$$snapshots[0].author).not.toBeDefined();
             expect(book.author).toEqualData({id: 1, name: 'George Orwell'});
 
             book.rollback();
@@ -455,8 +455,8 @@ describe('RailsResource.snapshots', function () {
             book.$key = '1235';
             book.author.name = 'George Orwell';
 
-            expect(book.$snapshots[0].author).toBeDefined();
-            expect(book.$snapshots[0].$key).not.toBeDefined();
+            expect(book.$$snapshots[0].author).toBeDefined();
+            expect(book.$$snapshots[0].$key).not.toBeDefined();
             expect(book.$key).toBe('1235');
             expect(book.author).toEqualData({id: 1, name: 'George Orwell'});
 
