@@ -220,7 +220,7 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
     }).create();
 }]);
 ```
-The 
+
 ### Custom Serialization
 When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option to
 alter the behavior of the object serialization.
