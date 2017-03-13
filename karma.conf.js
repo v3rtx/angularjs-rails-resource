@@ -6,11 +6,8 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
     reporters: ['progress', 'junit'],
     files: [
-      'test/lib/angular/angular.js',
-      'test/lib/angular/angular-bootstrap.js',
-      'test/lib/angular/angular-loader.js',
-      'test/lib/angular/angular-sanitize.js',
-      'test/lib/angular/angular-mocks.js',
+      'node_modules/angular/angular.js',
+      'node_modules/angular-mocks/angular-mocks.js',
       'vendor/assets/javascripts/angularjs/rails/resource/index.js',
       'vendor/assets/javascripts/angularjs/rails/resource/**/*.js',
       'test/unit/**/*.js'

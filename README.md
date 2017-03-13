@@ -640,7 +640,7 @@ class Book extends RailsResource
 Snapshots allow you to save off the state of the resource at a specific point in time and if need be roll back to one of the
 saved snapshots and yes, you can create as many snapshots as you want.
 
-Snapshots serialize the resource instance and save off a copy of the serialized data in the <code>$snapshots</code> array on the instance.
+Snapshots serialize the resource instance and save off a copy of the serialized data in the <code>$$snapshots</code> array on the instance.
 If you use a custom serialization options to control what is sent to the server you may want to consider whether or not you want to use
 different serialization options.  If so, you can specify an specific serializer for snapshots using the <code>snapshotSerializer</code> configuration
 option.
