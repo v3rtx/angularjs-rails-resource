@@ -123,6 +123,73 @@ function Resource() {
 RailsResource.extendTo(Resource);
 Resource.configure(config);
 ````
+##### ES6
+The code currently does not export any module information but it can be imported using the 'load with side-effects' method.
+This efectively runs through the code and makes the whole module available. Because we don't have an export to assign 
+the name 'rails' to a variable, we call in the angular module as a string, for example :
+````javascript
+// Import angular
+import angular                  from 'angular';
+import 'angular-animate'
+import 'angular-aria'
+// Materail Design lib
+import material                 from 'angular-material';
+// Router
+import angularUIRouter          from 'angular-ui-router';
+import ngTokenAuth              from 'ng-token-auth';
+// Note no 'from'
+import  'angularjs-rails-resource';
+
+import Configurations           from './configuration/module';
+import SignIn                   from './devise/signIn/module';
+import Models                   from './model/module';
+
+const testAppModule = angular.module( 'testApp',
+    [   material,
+        ngTokenAuth,
+        ngStorage.name,
+        angularUIRouter,
+        'rails'
+        ])
+````
+If you use ES6 classes to set up the model, the railsResourceFactory should be returned from the constructor, for example :
+
+````javascript
+class Client {
+    constructor(railsResourceFactory,){
+        return railsResourceFactory({
+            url: "/clients",
+            name: "client"
+        });
+    }
+    clientMethod1(){
+        
+    };
+    
+    clientMethod2(){
+        
+    };
+
+}
+
+Client.$inject = ['railsResourceFactory'];
+
+export default Client
+````
+The model classes can then be gathered up in a separate module.js or index.js file, for example :
+````javascript
+
+import Client               from './Client'
+import User                 from './User'
+import Blog                 from './Blog'
+
+export default angular
+    .module('model', [])
+    .service('Client', Client)
+    .service('User', User)
+    .service('Blog', Blog)
+````
+
 
 ### Using Resources
 ```javascript
@@ -153,7 +220,7 @@ angular.module('book.controllers').controller('BookShelfCtrl', ['$scope', 'Book'
     }).create();
 }]);
 ```
-
+The 
 ### Custom Serialization
 When defining a resource, you can pass a custom [serializer](#serializers) using the <code>serializer</code> configuration option to
 alter the behavior of the object serialization.
