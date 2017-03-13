@@ -219,6 +219,7 @@
                     this.config.underscoreParams = booleanParam(cfg.underscoreParams, defaultOptions.underscoreParams);
                     this.config.updateMethod = (cfg.updateMethod || defaultOptions.updateMethod).toLowerCase();
                     this.config.fullResponse = booleanParam(cfg.fullResponse, defaultOptions.fullResponse);
+                    this.config.singular = cfg.singular || defaultOptions.singular;
 
                     this.config.requestTransformers = cfg.requestTransformers ? cfg.requestTransformers.slice(0) : [];
                     this.config.responseInterceptors = cfg.responseInterceptors ? cfg.responseInterceptors.slice(0) : [];
