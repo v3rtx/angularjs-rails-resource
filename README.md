@@ -335,6 +335,14 @@ In addition to the fields listed in the $http documentation an additional field 
 object to keep track of what the field was originally pointing to.  The originalData is not a deep copy, it just ensures
 that if response.data is reassigned that there's still a pointer to the original response.data object.
 
+### Canceling Requests
+The promises returned from this library have an extra ```abort``` function defined that will allow you to cancel an outstanding request.  If you immediately call then/finally/catch the promise chain returned from those will not have a copy of the ```abort``` function so you need to first save a reference to the original promise returned.
+
+For example, the following code would abort the query request after the 5 second timeout:
+```javascript
+var promise = Item.query({category: 'Software'}, {storeId: 123});
+$timeout(promise.abort, 5000);
+```
 
 ## Resource Methods
 RailsResources have the following class methods available.
@@ -769,7 +777,7 @@ Running the tests should be as simple as following the [instructions](https://gi
 5. Create new Pull Request
 
 ## License
-Copyright (c) 2012 - 2013 [FineLine Prototyping, Inc.](http://www.finelineprototyping.com)
+Copyright (c) 2012 - 2017 [FineLine Prototyping, Inc.](http://www.finelineprototyping.com)
 
 MIT License
 

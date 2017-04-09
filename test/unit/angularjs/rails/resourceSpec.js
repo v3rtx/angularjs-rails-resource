@@ -18,10 +18,7 @@ describe('railsResourceFactory', function () {
         var $httpBackend, $timeout, $rootScope, factory, Test, testInterceptor,
             config = {
                 url: '/test',
-                name: 'test',
-                httpConfig: {
-                    timeout: 5000
-                }
+                name: 'test'
             };
 
         beforeEach(inject(function (_$httpBackend_, _$timeout_, _$rootScope_, railsResourceFactory, railsTestInterceptor) {
@@ -580,10 +577,15 @@ describe('railsResourceFactory', function () {
         });
 
         it('get should timeout after configured time', function () {
-            var promise, success = false, failure = false;
+            var promise, Resource, success = false, failure = false;
             $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
-
-            promise = Test.get(123);
+            
+            Resource = factory(angular.extend({}, config, {
+                httpConfig: {
+                    timeout: 5000
+                }
+            }));
+            promise = Resource.get(123);
             promise.then(function () {
                 success = true;
             }, function () {
@@ -591,6 +593,8 @@ describe('railsResourceFactory', function () {
             });
 
             $timeout.flush();
+            $httpBackend.verifyNoOutstandingExpectation();
+            $httpBackend.verifyNoOutstandingRequest();
             expect(success).toBeFalsy();
             expect(failure).toBeTruthy();                
         });
@@ -598,19 +602,20 @@ describe('railsResourceFactory', function () {
         it('$http should abort after timeout promise resolved', function () {
             inject(function ($q) {
                 var promise, success = false, failure = false,
-                    timeout = $q.defer(),
-                    timeoutPromise = timeout.promise;
+                    timeoutDeferred = $q.defer();
                 $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
 
-                promise = Test.$http({method: 'get', url: Test.resourceUrl(123), timeout: timeout.promise});
+                promise = Test.$http({method: 'get', url: Test.resourceUrl(123), timeout: timeoutDeferred.promise});
                 promise.then(function () {
                     success = true;
                 }, function () {
                     failure = true;
                 });
 
-                timeout.resolve();
+                timeoutDeferred.resolve();
                 $rootScope.$digest();                
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
                 expect(success).toBeFalsy();
                 expect(failure).toBeTruthy(); 
             });               
@@ -630,6 +635,8 @@ describe('railsResourceFactory', function () {
 
                 promise.abort();
                 $rootScope.$digest();
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
                 expect(success).toBeFalsy();
                 expect(failure).toBeTruthy(); 
             });               
