@@ -15,14 +15,18 @@ describe('railsResourceFactory', function () {
     });
 
     describe('singular', function() {
-        var $httpBackend, $rootScope, factory, Test, testInterceptor,
+        var $httpBackend, $timeout, $rootScope, factory, Test, testInterceptor,
             config = {
                 url: '/test',
-                name: 'test'
+                name: 'test',
+                httpConfig: {
+                    timeout: 5000
+                }
             };
 
-        beforeEach(inject(function (_$httpBackend_, _$rootScope_, railsResourceFactory, railsTestInterceptor) {
+        beforeEach(inject(function (_$httpBackend_, _$timeout_, _$rootScope_, railsResourceFactory, railsTestInterceptor) {
             $httpBackend = _$httpBackend_;
+            $timeout = _$timeout_;
             $rootScope = _$rootScope_;
             factory = railsResourceFactory;
             Test = railsResourceFactory(config);
@@ -177,22 +181,24 @@ describe('railsResourceFactory', function () {
         });
 
         it('get should call failure callback when 404', function () {
-            var promise, success = false, failure = false;
+            inject(function ($exceptionHandler) {
+                var promise, success = false, failure = false;
 
-            $httpBackend.expectGET('/test/123').respond(404);
+                $httpBackend.expectGET('/test/123').respond(404);
 
-            expect(promise = Test.get(123)).toBeDefined();
+                expect(promise = Test.get(123)).toBeDefined();
 
-            promise.then(function () {
-                success = true;
-            }, function () {
-                failure = true;
+                promise.then(function () {
+                    success = true;
+                }, function () {
+                    failure = true;
+                });
+
+                $httpBackend.flush();
+                expect($exceptionHandler.errors).toEqual([]);
+                expect(success).toBe(false);
+                expect(failure).toBe(true);
             });
-
-            $httpBackend.flush();
-
-            expect(success).toBe(false);
-            expect(failure).toBe(true);
         });
 
         it('get with default params should add parameter abc=1', function () {
@@ -557,6 +563,76 @@ describe('railsResourceFactory', function () {
         it('configure should return config object', function() {
           var Resource = factory();
           expect(Resource.configure(config)).toBeInstanceOf(Object);
+        });
+
+        it('get should catch exceptions on failure', function () {
+            inject(function ($exceptionHandler) {
+                var failure = false;
+
+                $httpBackend.expectGET('/test/123').respond(500);
+
+                Test.get(123).catch(function (response) { failure = true});
+
+                $httpBackend.flush();
+                expect($exceptionHandler.errors).toEqual([]);
+                expect(failure).toBeTruthy();
+            });
+        });
+
+        it('get should timeout after configured time', function () {
+            var promise, success = false, failure = false;
+            $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+            promise = Test.get(123);
+            promise.then(function () {
+                success = true;
+            }, function () {
+                failure = true;
+            });
+
+            $timeout.flush();
+            expect(success).toBeFalsy();
+            expect(failure).toBeTruthy();                
+        });
+
+        it('$http should abort after timeout promise resolved', function () {
+            inject(function ($q) {
+                var promise, success = false, failure = false,
+                    timeout = $q.defer(),
+                    timeoutPromise = timeout.promise;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.$http({method: 'get', url: Test.resourceUrl(123), timeout: timeout.promise});
+                promise.then(function () {
+                    success = true;
+                }, function () {
+                    failure = true;
+                });
+
+                timeout.resolve();
+                $rootScope.$digest();                
+                expect(success).toBeFalsy();
+                expect(failure).toBeTruthy(); 
+            });               
+        });
+
+        it('get should abort after abort called', function () {
+            inject(function ($q) {
+                var promise, abort, success = false, failure = false;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.get(123);
+                promise.then(function () {
+                    success = true;
+                }, function () {
+                    failure = true;
+                });
+
+                promise.abort();
+                $rootScope.$digest();
+                expect(success).toBeFalsy();
+                expect(failure).toBeTruthy(); 
+            });               
         });
 
         describe('overridden idAttribute', function () {

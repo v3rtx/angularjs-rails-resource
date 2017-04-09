@@ -108,8 +108,8 @@
             return this;
         };
 
-        this.$get = ['$http', '$q', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrapper', 'RailsResourceInjector',
-            function ($http, $q, railsUrlBuilder, railsSerializer, railsRootWrapper, RailsResourceInjector) {
+        this.$get = ['$http', '$q', '$timeout', 'railsUrlBuilder', 'railsSerializer', 'railsRootWrapper', 'RailsResourceInjector',
+            function ($http, $q, $timeout, railsUrlBuilder, railsSerializer, railsRootWrapper, RailsResourceInjector) {
 
                 function RailsResource(value) {
                     if (value) {
@@ -543,9 +543,25 @@
                  *      has completed.
                  */
                 RailsResource.$http = function (httpConfig, context, resourceConfigOverrides) {
-                    var config = angular.extend(angular.copy(this.config), resourceConfigOverrides || {}),
+                    var timeoutPromise, promise,
+                        config = angular.extend(angular.copy(this.config), resourceConfigOverrides || {}),
                         resourceConstructor = config.resourceConstructor,
-                        promise = $q.when(httpConfig);
+                        abortDeferred = $q.defer();
+                    
+                    function abortRequest() {
+                        abortDeferred.resolve();
+                    }
+
+                    if (httpConfig && httpConfig.timeout) {
+                        if (httpConfig.timeout > 0) {
+                            timeoutPromise = $timeout(abortDeferred.resolve, httpConfig.timeout);
+                        } else if (angular.isFunction(httpConfig.timeout.then)) {
+                            httpConfig.timeout.then(abortDeferred.resolve);
+                        }
+                    }
+
+                    httpConfig = angular.extend({}, httpConfig, {timeout: abortDeferred.promise});
+                    promise = $q.when(httpConfig);
 
                     if (!config.skipRequestProcessing) {
 
@@ -573,9 +589,19 @@
                         });
 
                     } else {
-
                         promise = $http(httpConfig);
+                    }
 
+                    // After the request has completed we need to cancel any pending timeout
+                    if (timeoutPromise) {
+                        // not using finally here to stay compatible with angular 1.0
+                        promise = promise.then(function (result) {
+                            $timeout.cancel(timeoutPromise);
+                            return result;
+                        }, function (error) {
+                            $timeout.cancel(timeoutPromise);
+                            return $q.reject(error);
+                        });
                     }
 
                     promise = this.runInterceptorPhase('beforeResponse', context, promise).then(function (response) {
@@ -610,6 +636,7 @@
                     promise = this.runInterceptorPhase('afterResponse', context, promise);
                     promise.resource = config.resourceConstructor;
                     promise.context = context;
+                    promise.abort = abortRequest;
                     return promise;
                 };
 
