@@ -47,6 +47,11 @@ To add extensions just add additional requires:
 ```javascript
 //= require angularjs/rails/resource/extensions/snapshots
 ```
+### JavaScript package managers
+
+Install via [npm](https://www.npmjs.com/package/angularjs-rails-resource): `npm install angularjs-rails-resource`
+
+Install via [Bower](http://bower.io): `bower install angularjs-rails-resource --save`
 
 ### Standalone
 If you aren't using the Rails asset pipeline you can download the combined
