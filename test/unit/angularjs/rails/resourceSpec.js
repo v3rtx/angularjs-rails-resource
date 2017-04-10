@@ -623,7 +623,7 @@ describe('railsResourceFactory', function () {
 
         it('get should abort after abort called', function () {
             inject(function ($q) {
-                var promise, abort, success = false, failure = false;
+                var promise, success = false, failure = false;
                 $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
 
                 promise = Test.get(123);
@@ -638,8 +638,86 @@ describe('railsResourceFactory', function () {
                 $httpBackend.verifyNoOutstandingExpectation();
                 $httpBackend.verifyNoOutstandingRequest();
                 expect(success).toBeFalsy();
-                expect(failure).toBeTruthy(); 
-            });               
+                expect(failure).toBeTruthy();
+            });
+        });
+
+        it('should have abort after chaining promise with then', function () {
+            inject(function ($q) {
+                var promise, success = false, failure = false;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.get(123).then(function () {
+                    success = true;
+                }, function () {
+                    failure = true;
+                });
+
+                promise.abort();
+                $rootScope.$digest();
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
+                expect(success).toBeFalsy();
+                expect(failure).toBeTruthy();
+            });
+        });
+
+        it('should have abort after chaining promise with catch', function () {
+            inject(function ($q) {
+                var promise, caught = false;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.get(123).catch(function () {
+                    caught = true;
+                });
+
+                promise.abort();
+                $rootScope.$digest();
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
+                expect(caught).toBeTruthy();
+            });
+        });
+
+        it('should have abort after chaining promise with finally', function () {
+            inject(function ($q) {
+                var promise, caught = false, final = false;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.get(123).catch(function () {
+                    caught = true;
+                }).finally(function () {
+                    final = true;
+                });
+
+                promise.abort();
+                $rootScope.$digest();
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
+                expect(caught).toBeTruthy();
+                expect(final).toBeTruthy();
+            });
+        });
+
+        it('should have abort after multiple chainings', function () {
+            inject(function ($q) {
+                var promise, failure = false;
+                $httpBackend.expectGET('/test/123').respond(200, {test: {id: 123, abc: 'xyz'}});
+
+                promise = Test.get(123)
+                    .then(function () {}, function () {
+                        return $q.reject(value);
+                    })
+                    .then(function () {}, function () {
+                        failure = true;
+                    });
+
+                promise.abort();
+                $rootScope.$digest();
+                $httpBackend.verifyNoOutstandingExpectation();
+                $httpBackend.verifyNoOutstandingRequest();
+                expect(failure).toBeTruthy();
+            });
         });
 
         describe('overridden idAttribute', function () {

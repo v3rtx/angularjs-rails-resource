@@ -336,7 +336,7 @@ object to keep track of what the field was originally pointing to.  The original
 that if response.data is reassigned that there's still a pointer to the original response.data object.
 
 ### Canceling Requests
-The promises returned from this library have an extra ```abort``` function defined that will allow you to cancel an outstanding request.  If you immediately call then/finally/catch the promise chain returned from those will not have a copy of the ```abort``` function so you need to first save a reference to the original promise returned.
+The promises returned from this library have an extra ```abort``` function defined that will allow you to cancel an outstanding request. Canceling the request will trigger timeout on ```$http``` which will in turn reject the outstanding promise. We wrap the ```$q``` promise to ensure that every time you chain the promise we re-add the ```abort``` function to the new promise.
 
 For example, the following code would abort the query request after the 5 second timeout:
 ```javascript

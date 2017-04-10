@@ -634,10 +634,11 @@
 
                     promise = this.callAfterResponseInterceptors(promise, context);
                     promise = this.runInterceptorPhase('afterResponse', context, promise);
-                    promise.resource = config.resourceConstructor;
-                    promise.context = context;
-                    promise.abort = abortRequest;
-                    return promise;
+                    return extendPromise(promise, {
+                        resource: config.resourceConstructor,
+                        context: context,
+                        abort: abortRequest
+                    });
                 };
 
                 /**
@@ -883,6 +884,16 @@
                         // can't use identity because we need to return a rejected promise to keep the error chain going
                         return rejectFn ? rejectFn(rejection, resourceConstructor, context) : $q.reject(rejection);
                     };
+                }
+
+                function extendPromise(promise, attributes) {
+                    var oldThen = promise.then;
+                    promise.then = function (onFulfilled, onRejected, progressBack) {
+                        var chainedPromise = oldThen.apply(this, arguments);
+                        return extendPromise(chainedPromise, attributes);
+                    };
+                    angular.extend(promise, attributes);
+                    return promise;
                 }
             }];
     });
