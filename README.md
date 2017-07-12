@@ -1,3 +1,5 @@
+# This is just a backup to be sure that we have abort_request branch, will be deleted after abort_request will be merged into master and released.
+
 # AngularJS Rails Resource
 [![Build Status](https://travis-ci.org/FineLinePrototyping/angularjs-rails-resource.png)](https://travis-ci.org/FineLinePrototyping/angularjs-rails-resource)
 
